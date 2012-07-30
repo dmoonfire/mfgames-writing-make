@@ -18,10 +18,11 @@ BUILD_DIR   ?= build
 TEMP_DIR    ?= build/tmp
 
 # Styles
+COVER_STYLE ?= plain
 EPUB_STYLE  ?= plain
+HTML_STYLE  ?= plain
 ODT_STYLE   ?= plain
 PDF_STYLE   ?= plain
-COVER_STYLE ?= plain
 
 #
 # Top-Level Rules
@@ -68,14 +69,11 @@ $(BUILD_DIR)/%.xml: $(BUILD_DIR)/%/index.xml
 # ODT
 #
 
-$(BUILD_DIR)/%.odt: base=$(subst .xml,,$*)
 $(BUILD_DIR)/%.odt: $(BUILD_DIR)/%.xml
-	docbook2odf $(BUILD_DIR)/$*.xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(TEMP_DIR)/$*.odt
+	docbook2odf $(BUILD_DIR)/$*.xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(BUILD_DIR)/$*.odt
 
-	zip -d $(TEMP_DIR)/$*.odt styles.xml
-	zip -u -j $(TEMP_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
-
-	cp $(TEMP_DIR)/$*.odt $(BUILD_DIR)/$*.odt
+	zip -d $(BUILD_DIR)/$*.odt styles.xml
+	zip -u -j $(BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
 
 #
 # RTF
@@ -220,3 +218,13 @@ $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DI
 
 $(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
 	cp $(TEMP_DIR)/$*.epub $(BUILD_DIR)/$*.epub
+
+#
+# HTML
+#
+
+$(BUILD_DIR)/%.html: $(BUILD_DIR)/%.xml
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/html/$(HTML_STYLE).xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(BUILD_DIR)/$*.html
