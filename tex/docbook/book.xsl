@@ -77,7 +77,7 @@
     <xsl:call-template name="newline"/>
     <xsl:apply-templates select="d:dedication"/>
     <xsl:apply-templates select="d:acknowledgments"/>
-    <xsl:text>\clearpage\tableofcontents</xsl:text>
+    <xsl:text>\clearpage\tableofcontents*</xsl:text>
     <xsl:apply-templates select="d:preface"/>
   </xsl:template>
   
@@ -96,10 +96,22 @@
       Back Matter
   -->
   <xsl:template match="d:book" mode="backmatter">
+	<xsl:apply-templates select="d:appendix"/>
+
     <xsl:if test="d:colophon">
       <xsl:text>\backmatter</xsl:text>
       <xsl:call-template name="newline"/>
       <xsl:apply-templates select="d:colophon"/>
     </xsl:if>
+  </xsl:template>
+
+  <xsl:template match="d:appendix">
+	<xsl:text>\appendix </xsl:text>
+
+    <xsl:text>\chapter{</xsl:text>
+    <xsl:call-template name="insert-title"/>
+    <xsl:text>}</xsl:text>
+
+	<xsl:apply-templates/>
   </xsl:template>
 </xsl:stylesheet>

@@ -62,6 +62,9 @@
     <xsl:text>\usepackage</xsl:text><xsl:value-of select="$package.titlesec.options"/><xsl:text>{titlesec}</xsl:text>
 	<xsl:call-template name="additional-usepackage"/>
 
+	<!-- Set up the document sizes -->
+    <xsl:apply-templates select="." mode="setup"/>
+
     <!-- Set up the fonts for the document -->
     <xsl:text>\setmainfont{</xsl:text>
     <xsl:value-of select="$font.main"/>
@@ -72,19 +75,6 @@
 \def\center{\trivlist \centering\item\relax}
 \def\endcenter{\endtrivlist}
 
-\pageav
-\stockav
-\setlength{\trimtop}{0pt}
-\setlength{\uppermargin}{1.0in}
-\setlength{\headheight}{12pt}
-\setlength{\headsep}{12pt}
-\setlength{\textheight}{6.3in}
-\setlength{\footskip}{0pt}
-\setlength{\textwidth}{4.5in}
-\setlength{\spinemargin}{0.8in}
-\setlength{\foremargin}{0.5in}
-\checkandfixthelayout
-
 \raggedbottom
 
 \epigraphfontsize{\footnotesize}
@@ -93,8 +83,6 @@
 \epigraphposition{center}
 \epigraphtextposition{raggedright}
 \epigraphsourceposition{raggedleft}</xsl:text>
-
-    <xsl:apply-templates select="." mode="setup"/>
 
     <xsl:apply-templates select="." mode="pagestyle"/>
 
@@ -148,7 +136,7 @@
   </xsl:template>
 
   <xsl:template match="d:dedication">
-    <xsl:text>\clearpage\pagestyle{empty}\begin{center}\vspace*{1in}</xsl:text>
+    <xsl:text>\clearpage\thispagestyle{empty}\begin{center}\vspace*{1in}</xsl:text>
     <xsl:apply-templates/>
     <xsl:text>\end{center}</xsl:text>
   </xsl:template>
