@@ -12,15 +12,16 @@
 # the v3-vars.make doesn't set it or doesn't exist.
 
 # Directories
-STYLE_DIR  ?= style
-SOURCE_DIR ?= .
-BUILD_DIR  ?= build
-TEMP_DIR   ?= build/tmp
+STYLE_DIR   ?= style
+SOURCE_DIR  ?= .
+BUILD_DIR   ?= build
+TEMP_DIR    ?= build/tmp
 
 # Styles
-ODT_STYLE  ?= plain
-PDF_STYLE  ?= plain
-EPUB_STYLE ?= plain
+EPUB_STYLE  ?= plain
+ODT_STYLE   ?= plain
+PDF_STYLE   ?= plain
+COVER_STYLE ?= plain
 
 #
 # Top-Level Rules
@@ -164,9 +165,34 @@ $(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(BUILD_
 		-s:$(BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.opf
 
-$(TEMP_DIR)/%-epub/cover.jpg:
+$(BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
+	mkdir -p $(BUILD_DIR)/$(dir $*)
+	cp $(SOURCE_DIR)/$*.jpg $(BUILD_DIR)/$*.jpg
+
+$(BUILD_DIR)/%.jpg: $(BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
+	# We have to create a cover using `fop`.
+	mkdir -p $(TEMP_DIR)/$*-cover
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/cover/$(COVER_STYLE).xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-cover/cover.fop
+
+	# Create the PNG version of the cover.
+	fop $(TEMP_DIR)/$*-cover/cover.fop -png $(TEMP_DIR)/$*-cover/cover.png
+
+	# Convert the PNG to JPG.
+	convert $(TEMP_DIR)/$*-cover/cover.png $(BUILD_DIR)/$*.jpg
+
+$(TEMP_DIR)/%-epub/cover.jpg: $(BUILD_DIR)/%.jpg
 	mkdir -p $(TEMP_DIR)/$*-epub
-	cp $(SOURCE_DIR)/$(dir $*)/cover.jpg $(TEMP_DIR)/$*-epub/cover.jpg
+	cp $(BUILD_DIR)/%.jpg $(TEMP_DIR)/%-epub/cover.jpg
+
+	# If the cover exists, we want to use it directly.
+	if [ -f $(SOURCE_DIR)/$(dir $*)/cover.jpg ];then \
+		cp $(SOURCE_DIR)/$(dir $*)/cover.jpg $(TEMP_DIR)/$*-epub/cover.jpg; \
+	fi
+
+	# If the cover doesn't exist, we want to make one.
 
 $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
 	# Remove any existing epub file, because we have to rebuild it.
