@@ -24,11 +24,11 @@
     <xsl:text>}</xsl:text>
 
     <xsl:text>\makeevenfoot{custompage}{</xsl:text>
-    <xsl:apply-templates select="." mode="pagestyle.header.even.left"/>
+    <xsl:apply-templates select="." mode="pagestyle.footer.even.left"/>
     <xsl:text>}{</xsl:text>
-    <xsl:apply-templates select="." mode="pagestyle.header.even.center"/>
+    <xsl:apply-templates select="." mode="pagestyle.footer.even.center"/>
     <xsl:text>}{</xsl:text>
-    <xsl:apply-templates select="." mode="pagestyle.header.even.right"/>
+    <xsl:apply-templates select="." mode="pagestyle.footer.even.right"/>
     <xsl:text>}</xsl:text>
 
     <xsl:text>\makeoddfoot{custompage}{</xsl:text>

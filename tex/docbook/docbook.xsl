@@ -148,10 +148,9 @@
   </xsl:template>
 
   <xsl:template match="d:dedication">
-    <xsl:text>\clearpage</xsl:text>
-    <xsl:call-template name="newline"/>
-
+    <xsl:text>\clearpage\pagestyle{empty}\begin{center}\vspace*{1in}</xsl:text>
     <xsl:apply-templates/>
+    <xsl:text>\end{center}</xsl:text>
   </xsl:template>
 
   <xsl:template match="d:acknowledgments">
@@ -176,7 +175,23 @@
   </xsl:template>
 
   <xsl:template match="d:para|d:simpara">
+    <xsl:if test="@role = 'slab'">
+      <xsl:text>\noindent </xsl:text>
+    </xsl:if>
+
+    <xsl:if test="@role = 'center'">
+      <xsl:text>\begin{center}</xsl:text>
+    </xsl:if>
+
     <xsl:apply-templates />
+
+    <xsl:if test="@role = 'slab'">
+      <xsl:text>\mbox{} \\ </xsl:text>
+    </xsl:if>
+
+    <xsl:if test="@role = 'center'">
+      <xsl:text>\end{center}</xsl:text>
+    </xsl:if>
 
     <xsl:call-template name="newline"/>
     <xsl:call-template name="newline"/>
@@ -196,6 +211,12 @@
     <xsl:text>&#8220;</xsl:text>
     <xsl:apply-templates/>
     <xsl:text>&#8221;</xsl:text>
+  </xsl:template>
+
+  <!-- Address -->
+  <xsl:template match="d:street|d:city">
+    <xsl:text>\\</xsl:text>
+    <xsl:apply-templates/>
   </xsl:template>
 
   <!-- Formatting -->

@@ -21,9 +21,6 @@ TEMP_DIR   ?= /tmp/style-make
 ODT_STYLE  ?= plain
 PDF_STYLE  ?= plain
 
-# Controls
-.ONESHELL:
-
 #
 # Top-Level Rules
 #
@@ -92,16 +89,32 @@ $(BUILD_DIR)/%.rtf: $(BUILD_DIR)/%.odt
 $(TEMP_DIR)/%.tex: $(BUILD_DIR)/%.xml
 	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
 
+	# Escape the generated LaTeX.
+	cat $(TEMP_DIR)/$*.tex | \
+		sed 's@\$$@\\$$@g' | \
+		sed 's@&@\\&@g' | \
+		sed 's@\^@\\^@g' > $(TEMP_DIR)/$(dir $*)/styled.tex
+	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
+
 	# Convert the -FIRSTPARA- lines into drop capitals using lettrine.
 	perl -n -e \
 		's/-FIRSTPARA-\s*(.)([^\s]*)/\\lettrine{$$1}{$$2}/sg;print' \
 		< $(TEMP_DIR)/$*.tex > $(TEMP_DIR)/$(dir $*)/styled.tex
 	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
 
+	# Copy any additional assets from the source file.
+	if [ -d $(STYLE_DIR)/tex/$(PDF_STYLE) ]; \
+	then \
+		cp $(STYLE_DIR)/tex/$(PDF_STYLE)/* $(TEMP_DIR)/$(dir $*); \
+	fi
+
 $(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
-	xelatex -output-directory=$(TEMP_DIR)/$(dir $*) $(TEMP_DIR)/$*.tex
-	xelatex -output-directory=$(TEMP_DIR)/$(dir $*) $(TEMP_DIR)/$*.tex
-	xelatex -output-directory=$(TEMP_DIR)/$(dir $*) $(TEMP_DIR)/$*.tex
+	cd $(TEMP_DIR)/$(dir $*) && \
+		xelatex -halt-on-error $(notdir $*).tex > /dev/null
+	cd $(TEMP_DIR)/$(dir $*) && \
+		xelatex -halt-on-error $(notdir $*).tex > /dev/null
+	cd $(TEMP_DIR)/$(dir $*) && \
+		xelatex -halt-on-error $(notdir $*).tex > /dev/null
 
 $(BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 	cp $(TEMP_DIR)/$*.pdf $(BUILD_DIR)/$*.pdf

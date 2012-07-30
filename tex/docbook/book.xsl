@@ -11,7 +11,10 @@
 
   <xsl:template match="d:book" mode="title">
     <!-- Insert the custom title page -->
-    <xsl:text>\begin{titlingpage}\maketitle\end{titlingpage}</xsl:text>
+    <xsl:text>\begin{titlingpage}</xsl:text>
+    <xsl:text>\maketitle</xsl:text>
+    <xsl:apply-templates select="d:info/d:legalnotice"/>
+    <xsl:text>\end{titlingpage}</xsl:text>
   </xsl:template>
 
   <xsl:template match="d:book" mode="maketitle">
@@ -72,7 +75,6 @@
   <xsl:template match="d:book" mode="frontmatter">
     <xsl:text>\frontmatter</xsl:text>
     <xsl:call-template name="newline"/>
-    <xsl:apply-templates select="d:info/d:legalnotice"/>
     <xsl:apply-templates select="d:dedication"/>
     <xsl:apply-templates select="d:acknowledgments"/>
     <xsl:text>\clearpage\tableofcontents</xsl:text>

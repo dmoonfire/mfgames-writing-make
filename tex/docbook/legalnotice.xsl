@@ -5,7 +5,7 @@
     xmlns:fo="http://www.w3.org/1999/XSL/Format"
     version="2.0">
   <xsl:template match="d:legalnotice">
-    <xsl:text>\clearpage</xsl:text>
+    <xsl:text>\clearpage </xsl:text>
     <xsl:apply-templates/>
   </xsl:template>
 </xsl:stylesheet>
