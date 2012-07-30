@@ -70,7 +70,7 @@ $(BUILD_DIR)/%.xml: $(BUILD_DIR)/%/index.xml
 #
 
 $(BUILD_DIR)/%.odt: $(BUILD_DIR)/%.xml
-	docbook2odf $(BUILD_DIR)/$*.xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(BUILD_DIR)/$*.odt
+	cd $(BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
 	zip -d $(BUILD_DIR)/$*.odt styles.xml
 	zip -u -j $(BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
@@ -81,6 +81,20 @@ $(BUILD_DIR)/%.odt: $(BUILD_DIR)/%.xml
 
 $(BUILD_DIR)/%.rtf: $(BUILD_DIR)/%.odt
 	unoconv -f rtf $(BUILD_DIR)/$*.odt
+
+#
+# DOC
+#
+
+$(BUILD_DIR)/%.doc: $(BUILD_DIR)/%.odt
+	unoconv -f doc $(BUILD_DIR)/$*.odt
+
+#
+# DOCX
+#
+
+$(BUILD_DIR)/%.docx: $(BUILD_DIR)/%.odt
+	unoconv -f docx $(BUILD_DIR)/$*.odt
 
 #
 # PDF
