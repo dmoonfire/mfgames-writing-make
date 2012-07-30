@@ -15,11 +15,12 @@
 STYLE_DIR  ?= style
 SOURCE_DIR ?= .
 BUILD_DIR  ?= build
-TEMP_DIR   ?= /tmp/style-make
+TEMP_DIR   ?= build/tmp
 
 # Styles
 ODT_STYLE  ?= plain
 PDF_STYLE  ?= plain
+EPUB_STYLE ?= plain
 
 #
 # Top-Level Rules
@@ -28,7 +29,7 @@ PDF_STYLE  ?= plain
 all:
 
 clean:
-	rm -fr $(BUILD_DIR)
+	rm -fr $(BUILD_DIR) $(TEMP_DIR)
 	rm -f *~ *.fo
 
 #
@@ -118,3 +119,78 @@ $(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
 
 $(BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 	cp $(TEMP_DIR)/$*.pdf $(BUILD_DIR)/$*.pdf
+
+#
+# EPUB
+#
+
+$(TEMP_DIR)/%-epub/content.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl $(BUILD_DIR)/%.xml
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/content.html
+
+$(TEMP_DIR)/%-epub/toc.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl $(BUILD_DIR)/%.xml
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/toc.html
+
+$(TEMP_DIR)/%-epub/cover.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl $(BUILD_DIR)/%.xml
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/cover.html
+
+$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)/%.xml
+	# Create the NCX file which has placeholders for the sequence.
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/toc.ncx
+
+	# Reformat the NCX file so everything is in proper order and
+	# sequential.
+	mfgames-ncx format $(TEMP_DIR)/$*-epub/toc.ncx
+
+$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(BUILD_DIR)/%.xml
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/content.opf
+
+$(TEMP_DIR)/%-epub/cover.jpg:
+	mkdir -p $(TEMP_DIR)/$*-epub
+	cp $(SOURCE_DIR)/$(dir $*)/cover.jpg $(TEMP_DIR)/$*-epub/cover.jpg
+
+$(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
+	# Remove any existing epub file, because we have to rebuild it.
+	rm -f $(BUILD_DIR)/$*.epub
+
+	# Create the mimetype file.
+	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub/mimetype
+
+	# Create the META-INF directory.
+	mkdir $(TEMP_DIR)/$*-epub/META-INF
+	echo '<?xml version="1.0"?>' > $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	echo '   <rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	echo '   </rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	echo '</container>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+
+	# Zip all the contents of the file
+	cd $(TEMP_DIR)/$*-epub && zip -X0 epub.zip mimetype
+	cd $(TEMP_DIR)/$*-epub && zip -rDX9 epub.zip * -x mimetype -x epub.zip
+	mv $(TEMP_DIR)/$*-epub/epub.zip $(TEMP_DIR)/$*.epub
+
+	# Verify that we have a valid epub file.
+	epubcheck $(TEMP_DIR)/$*.epub
+
+$(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
+	cp $(TEMP_DIR)/$*.epub $(BUILD_DIR)/$*.epub
