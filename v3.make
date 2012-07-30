@@ -197,14 +197,7 @@ $(BUILD_DIR)/%.jpg: $(BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
 
 $(TEMP_DIR)/%-epub/cover.jpg: $(BUILD_DIR)/%.jpg
 	mkdir -p $(TEMP_DIR)/$*-epub
-	cp $(BUILD_DIR)/%.jpg $(TEMP_DIR)/%-epub/cover.jpg
-
-	# If the cover exists, we want to use it directly.
-	if [ -f $(SOURCE_DIR)/$(dir $*)/cover.jpg ];then \
-		cp $(SOURCE_DIR)/$(dir $*)/cover.jpg $(TEMP_DIR)/$*-epub/cover.jpg; \
-	fi
-
-	# If the cover doesn't exist, we want to make one.
+	cp $(BUILD_DIR)/$*.jpg $(TEMP_DIR)/$*-epub/cover.jpg
 
 $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
 	# Remove any existing epub file, because we have to rebuild it.
@@ -232,6 +225,13 @@ $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DI
 
 $(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
 	cp $(TEMP_DIR)/$*.epub $(BUILD_DIR)/$*.epub
+
+#
+# MOBI
+#
+
+$(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
+	echo bob
 
 #
 # HTML
