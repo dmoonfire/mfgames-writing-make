@@ -158,7 +158,18 @@ $(TEMP_DIR)/%-epub/cover.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl $(BUILD
 		-s:$(BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/cover.html
 
-$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(BUILD_DIR)/%.xml
+	# Create the content OPF file using stylesheet.
+	mkdir -p $(TEMP_DIR)/$*-epub
+	saxonb-xslt \
+		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl \
+		-s:$(BUILD_DIR)/$*.xml \
+		-o:$(TEMP_DIR)/$*-epub/content.opf
+
+	# Ensure that the OPF file has a unique identifier.
+	mfgames-opf uid-generate $(TEMP_DIR)/$*-epub/content.opf
+
+$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
@@ -166,16 +177,10 @@ $(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)
 		-s:$(BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/toc.ncx
 
-	# Reformat the NCX file so everything is in proper order and
-	# sequential.
-	mfgames-ncx format $(TEMP_DIR)/$*-epub/toc.ncx
-
-$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(BUILD_DIR)/%.xml
-	mkdir -p $(TEMP_DIR)/$*-epub
-	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
-		-o:$(TEMP_DIR)/$*-epub/content.opf
+	# The NCX file's unique identifier needs to match the OPF files,
+	# that is why we depend on the OPF file.
+	mfgames-ncx meta-set $(TEMP_DIR)/$*-epub/toc.ncx dtb:uid \
+		$(shell mfgames-opf uid-get $(TEMP_DIR)/$*-epub/content.opf)
 
 $(BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
 	mkdir -p $(BUILD_DIR)/$(dir $*)
@@ -207,7 +212,7 @@ $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DI
 	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub/mimetype
 
 	# Create the META-INF directory.
-	mkdir $(TEMP_DIR)/$*-epub/META-INF
+	mkdir -p $(TEMP_DIR)/$*-epub/META-INF
 	echo '<?xml version="1.0"?>' > $(TEMP_DIR)/$*-epub/META-INF/container.xml
 	echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
 	echo '   <rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
@@ -231,7 +236,19 @@ $(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
 #
 
 $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
-	echo bob
+	# Create our temporary directory.
+	mkdir $(TEMP_DIR)/$*-mobi
+
+	# Move the EPUB file into that directory and expand it.
+	cp $(BUILD_DIR)/$*.epub $(TEMP_DIR)/$*-mobi/content.epub
+	cd $(TEMP_DIR)/$*-mobi && unzip content.epub
+	rm $(TEMP_DIR)/$*-mobi/content.epub
+
+	# Remove the cover.html since `kindlegen` does not support it.
+	mfgames-opf manifest-remove cover.html
+
+	# Build the mobi file inside the directory.
+	cd $(TEMP_DIR)/$*-mobi && kindlegen content.opf
 
 #
 # HTML
