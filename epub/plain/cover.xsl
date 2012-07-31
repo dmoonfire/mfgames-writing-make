@@ -14,15 +14,23 @@
   <xsl:template match="/">
     <html>
       <head>
-	<meta http-equiv="Content-Type"
-	      content="application/xhtml+xml; charset=utf-8" />
-	<title>Cover</title>
-	
-	<!-- Add in the stylesheet -->
-	<xsl:apply-templates select="*" mode="css-style"/>
+		<meta http-equiv="Content-Type"
+			  content="application/xhtml+xml; charset=utf-8" />
+		<title>Cover</title>
+		
+		<!-- Add in the stylesheet -->
+		<xsl:apply-templates select="*" mode="css-style"/>
       </head>
       <body>
-	<xsl:apply-templates select="*/d:info/d:cover"/>
+		<xsl:choose>
+		  <xsl:when test="*/d:info/d:cover">
+			<xsl:apply-templates select="*/d:info/d:cover"/>
+		  </xsl:when>
+		  <xsl:otherwise>
+			<!-- Just put in the image tag -->
+			<div><img src="cover.jpg" alt="Cover"/></div>
+		  </xsl:otherwise>
+		</xsl:choose>
       </body>
     </html>
   </xsl:template>

@@ -66,6 +66,7 @@
 	  <xsl:call-template name="insert-anchor"/>
 	  <xsl:apply-templates select="d:info/d:title"/>
 	</h1>
+	<div id="start"/>
 	
 	<xsl:apply-templates select="d:preface">
 	  <xsl:with-param name="depth">2</xsl:with-param>

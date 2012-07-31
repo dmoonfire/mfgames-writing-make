@@ -17,6 +17,9 @@ SOURCE_DIR  ?= .
 BUILD_DIR   ?= build
 TEMP_DIR    ?= build/tmp
 
+# Programs
+KINDLEGEN   = /opt/kindlegen/kindlegen
+
 # Styles
 COVER_STYLE ?= plain
 EPUB_STYLE  ?= plain
@@ -41,7 +44,7 @@ clean:
 $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.txt
 	mkdir -p $(TEMP_DIR)/$(dir $*)
 
-	mfgames-creole docbook --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook --force --output $(TEMP_DIR)/$*.xml $(SOURCE_DIR)/$*.txt
+	mfgames-creole docbook --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(SOURCE_DIR)/$*.txt
 
 #
 # XML
@@ -237,7 +240,8 @@ $(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
 
 $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 	# Create our temporary directory.
-	mkdir $(TEMP_DIR)/$*-mobi
+	-rm -r $(TEMP_DIR)/$*-mobi/*
+	mkdir -p $(TEMP_DIR)/$*-mobi
 
 	# Move the EPUB file into that directory and expand it.
 	cp $(BUILD_DIR)/$*.epub $(TEMP_DIR)/$*-mobi/content.epub
@@ -245,10 +249,20 @@ $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 	rm $(TEMP_DIR)/$*-mobi/content.epub
 
 	# Remove the cover.html since `kindlegen` does not support it.
-	mfgames-opf manifest-remove cover.html
+	mfgames-opf manifest-remove $(TEMP_DIR)/$*-mobi/content.opf cover
+	mfgames-opf spine-remove $(TEMP_DIR)/$*-mobi/content.opf cover
+	mfgames-opf cover-set $(TEMP_DIR)/$*-mobi/content.opf cover-image
+	mfgames-ncx nav-remove $(TEMP_DIR)/$*-mobi/toc.ncx cover
+	rm $(TEMP_DIR)/$*-mobi/cover.html
 
 	# Build the mobi file inside the directory.
-	cd $(TEMP_DIR)/$*-mobi && kindlegen content.opf
+	cd $(TEMP_DIR)/$*-mobi && $(KINDLEGEN) content.opf
+
+	# Move the mobi file into the proper location.
+	mv $(TEMP_DIR)/$*-mobi/content.mobi $(BUILD_DIR)/$*.mobi
+
+	# Clean up all the temporary files.
+	rm -rf $(TEMP_DIR)/$*-mobi
 
 #
 # HTML
