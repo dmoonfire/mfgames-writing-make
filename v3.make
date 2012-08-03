@@ -55,10 +55,8 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 
 	cp $(SOURCE_DIR)/$*.xml $(TEMP_DIR)/$*.xml
 
-$(BUILD_DIR)/%.xml: xi=$(shell mfgames-docbook xinclude $(TEMP_DIR)/$*.xml)
-$(BUILD_DIR)/%.xml: xi2=$(addprefix $(TEMP_DIR)/$(dir $*), $(xi))
 $(BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml 
-	$(MAKE) $(xi2)
+	$(MAKE) $(addprefix $(TEMP_DIR)/$(dir $*), $(shell mfgames-docbook depends -i $(TEMP_DIR)/$*.xml))
 
 	mfgames-docbook gather --force $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather
 
