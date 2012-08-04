@@ -136,6 +136,7 @@ $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 	# Escape the generated LaTeX.
 	cat $(TEMP_DIR)/$*.tex | \
 		sed 's@\$$@\\$$@g' | \
+		sed 's@#@\\#@g' | \
 		sed 's@&@\\&@g' | \
 		sed 's@\^@\\^@g' > $(TEMP_DIR)/$(dir $*)/styled.tex
 	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
@@ -175,37 +176,37 @@ $(TEMP_DIR)/%-epub/content.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl $(X
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.html
 
-$(TEMP_DIR)/%-epub/toc.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl $(BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/toc.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/toc.html
 
-$(TEMP_DIR)/%-epub/cover.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl $(BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/cover.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/cover.html
 
-$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(XML_BUILD_DIR)/%.xml
 	# Create the content OPF file using stylesheet.
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.opf
 
 	# Ensure that the OPF file has a unique identifier.
 	mfgames-opf uid-generate $(TEMP_DIR)/$*-epub/content.opf
 
-$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
+$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/toc.ncx
 
 	# The NCX file's unique identifier needs to match the OPF files,
@@ -229,7 +230,7 @@ $(JPG_BUILD_DIR)/%.jpg: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE)
 	fop $(TEMP_DIR)/$*-cover/cover.fop -png $(TEMP_DIR)/$*-cover/cover.png
 
 	# Convert the PNG to JPG.
-	convert $(TEMP_DIR)/$*-cover/cover.png $(JPG_BUILD_DIR)/$*.jpg
+	convert $(TEMP_DIR)/$*-cover/cover.png -quality 75 $(JPG_BUILD_DIR)/$*.jpg
 
 $(TEMP_DIR)/%-epub/cover.jpg: $(JPG_BUILD_DIR)/%.jpg
 	mkdir -p $(TEMP_DIR)/$*-epub
