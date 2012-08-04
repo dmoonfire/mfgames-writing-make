@@ -15,6 +15,16 @@
 STYLE_DIR     ?= style
 SOURCE_DIR    ?= .
 BUILD_DIR     ?= build
+XML_BUILD_DIR ?= $(BUILD_DIR)
+PDF_BUILD_DIR ?= $(BUILD_DIR)
+ODT_BUILD_DIR ?= $(BUILD_DIR)
+RTF_BUILD_DIR ?= $(ODT_BUILD_DIR)
+DOC_BUILD_DIR ?= $(ODT_BUILD_DIR)
+DOCX_BUILD_DIR ?= $(ODT_BUILD_DIR)
+EPUB_BUILD_DIR ?= $(BUILD_DIR)
+MOBI_BUILD_DIR ?= $(EPUB_BUILD_DIR)
+JPG_BUILD_DIR ?= $(BUILD_DIR)
+HTML_BUILD_DIR ?= $(BUILD_DIR)
 TEMP_DIR      ?= build/tmp
 
 # Programs
@@ -34,7 +44,7 @@ PDF_STYLE   ?= plain
 all:
 
 clean:
-	rm -fr $(PDF_BUILD_DIR) $(BUILD_DIR) $(TEMP_DIR)
+	rm -fr $(PDF_BUILD_DIR) $(XML_BUILD_DIR) $(BUILD_DIR) $(TEMP_DIR)
 	rm -f *~ *.fo
 
 #
@@ -72,47 +82,56 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 $(TEMP_DIR)/%.xml: $(TEMP_DIR)/%/index.xml
 	cp $(TEMP_DIR)/$*/index.xml $(TEMP_DIR)/$*.xml
 
-$(BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml 
-	mkdir -p $(BUILD_DIR)/$(dir $*)
-	cp $(TEMP_DIR)/$*.xml $(BUILD_DIR)/$*.xml
+$(XML_BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml 
+	mkdir -p $(XML_BUILD_DIR)/$(dir $*)
+	cp $(TEMP_DIR)/$*.xml $(XML_BUILD_DIR)/$*.xml
 
 #
 # ODT
 #
 
-$(BUILD_DIR)/%.odt: $(BUILD_DIR)/%.xml
-	cd $(BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
+$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
+	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
-	zip -d $(BUILD_DIR)/$*.odt styles.xml
-	zip -u -j $(BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
+	zip -d $(XML_BUILD_DIR)/$*.odt styles.xml
+	zip -u -j $(XML_BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
+
+	mkdir -p $(ODT_BUILD_DIR)/$(dir $*)
+	mv $(XML_BUILD_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
 
 #
 # RTF
 #
 
-$(BUILD_DIR)/%.rtf: $(BUILD_DIR)/%.odt
-	unoconv -f rtf $(BUILD_DIR)/$*.odt
+$(RTF_BUILD_DIR)/%.rtf: $(ODT_BUILD_DIR)/%.odt
+	unoconv -f rtf $(ODT_BUILD_DIR)/$*.odt
+	mkdir -p $(RTF_BUILD_DIR)/$(dir $*)
+	mv $(ODT_BUILD_DIR)/$*.odt $(RTF_BUILD_DIR)/$*.rtf
 
 #
 # DOC
 #
 
-$(BUILD_DIR)/%.doc: $(BUILD_DIR)/%.odt
-	unoconv -f doc $(BUILD_DIR)/$*.odt
+$(DOC_BUILD_DIR)/%.doc: $(ODT_BUILD_DIR)/%.odt
+	unoconv -f doc $(ODT_BUILD_DIR)/$*.odt
+	mkdir -p $(DOC_BUILD_DIR)/$(dir $*)
+	mv $(ODT_BUILD_DIR)/$*.odt $(DOC_BUILD_DIR)/$*.rtf
 
 #
 # DOCX
 #
 
-$(BUILD_DIR)/%.docx: $(BUILD_DIR)/%.odt
-	unoconv -f docx $(BUILD_DIR)/$*.odt
+$(DOCX_BUILD_DIR)/%.docx: $(ODT_BUILD_DIR)/%.odt
+	unoconv -f doc $(ODT_BUILD_DIR)/$*.odt
+	mkdir -p $(DOCX_BUILD_DIR)/$(dir $*)
+	mv $(ODT_BUILD_DIR)/$*.odt $(DOCX_BUILD_DIR)/$*.rtf
 
 #
 # PDF
 #
 
-$(TEMP_DIR)/%.tex: $(BUILD_DIR)/%.xml
-	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
+$(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
+	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(XML_BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
 
 	# Escape the generated LaTeX.
 	cat $(TEMP_DIR)/$*.tex | \
@@ -141,18 +160,19 @@ $(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
 	cd $(TEMP_DIR)/$(dir $*) && \
 		xelatex -halt-on-error $(notdir $*).tex > /dev/null
 
-$(BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
-	cp $(TEMP_DIR)/$*.pdf $(BUILD_DIR)/$*.pdf
+$(PDF_BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
+	mkdir -p $(PDF_BUILD_DIR)/$(dir $*)
+	cp $(TEMP_DIR)/$*.pdf $(PDF_BUILD_DIR)/$*.pdf
 
 #
 # EPUB
 #
 
-$(TEMP_DIR)/%-epub/content.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl $(BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/content.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.html
 
 $(TEMP_DIR)/%-epub/toc.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl $(BUILD_DIR)/%.xml
@@ -193,31 +213,31 @@ $(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(BUILD_DIR)
 	mfgames-ncx meta-set $(TEMP_DIR)/$*-epub/toc.ncx dtb:uid \
 		$(shell mfgames-opf uid-get $(TEMP_DIR)/$*-epub/content.opf)
 
-$(BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
-	mkdir -p $(BUILD_DIR)/$(dir $*)
-	cp $(SOURCE_DIR)/$*.jpg $(BUILD_DIR)/$*.jpg
+$(JPG_BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
+	mkdir -p $(JPG_BUILD_DIR)/$(dir $*)
+	cp $(SOURCE_DIR)/$*.jpg $(JPG_BUILD_DIR)/$*.jpg
 
-$(BUILD_DIR)/%.jpg: $(BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
+$(JPG_BUILD_DIR)/%.jpg: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
 	# We have to create a cover using `fop`.
 	mkdir -p $(TEMP_DIR)/$*-cover
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/cover/$(COVER_STYLE).xsl \
-		-s:$(BUILD_DIR)/$*.xml \
+		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-cover/cover.fop
 
 	# Create the PNG version of the cover.
 	fop $(TEMP_DIR)/$*-cover/cover.fop -png $(TEMP_DIR)/$*-cover/cover.png
 
 	# Convert the PNG to JPG.
-	convert $(TEMP_DIR)/$*-cover/cover.png $(BUILD_DIR)/$*.jpg
+	convert $(TEMP_DIR)/$*-cover/cover.png $(JPG_BUILD_DIR)/$*.jpg
 
-$(TEMP_DIR)/%-epub/cover.jpg: $(BUILD_DIR)/%.jpg
+$(TEMP_DIR)/%-epub/cover.jpg: $(JPG_BUILD_DIR)/%.jpg
 	mkdir -p $(TEMP_DIR)/$*-epub
-	cp $(BUILD_DIR)/$*.jpg $(TEMP_DIR)/$*-epub/cover.jpg
+	cp $(JPG_BUILD_DIR)/$*.jpg $(TEMP_DIR)/$*-epub/cover.jpg
 
-$(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
+$(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
 	# Remove any existing epub file, because we have to rebuild it.
-	rm -f $(BUILD_DIR)/$*.epub
+	rm -f $(TEMP_DIR)/$*.epub
 
 	# Create the mimetype file.
 	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub/mimetype
@@ -239,20 +259,21 @@ $(TEMP_DIR)/%.epub: $(BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DI
 	# Verify that we have a valid epub file.
 	epubcheck $(TEMP_DIR)/$*.epub
 
-$(BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
-	cp $(TEMP_DIR)/$*.epub $(BUILD_DIR)/$*.epub
+$(EPUB_BUILD_DIR)/%.epub: $(TEMP_DIR)/%.epub
+	mkdir -p $(EPUB_BUILD_DIR)/$(dir $*)
+	cp $(TEMP_DIR)/$*.epub $(EPUB_BUILD_DIR)/$*.epub
 
 #
 # MOBI
 #
 
-$(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
+$(MOBI_BUILD_DIR)/%.mobi: $(EPUB_BUILD_DIR)/%.epub
 	# Create our temporary directory.
 	-rm -r $(TEMP_DIR)/$*-mobi/*
 	mkdir -p $(TEMP_DIR)/$*-mobi
 
 	# Move the EPUB file into that directory and expand it.
-	cp $(BUILD_DIR)/$*.epub $(TEMP_DIR)/$*-mobi/content.epub
+	cp $(EPUB_BUILD_DIR)/$*.epub $(TEMP_DIR)/$*-mobi/content.epub
 	cd $(TEMP_DIR)/$*-mobi && unzip content.epub
 	rm $(TEMP_DIR)/$*-mobi/content.epub
 
@@ -267,7 +288,7 @@ $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 	cd $(TEMP_DIR)/$*-mobi && $(KINDLEGEN) content.opf
 
 	# Move the mobi file into the proper location.
-	mv $(TEMP_DIR)/$*-mobi/content.mobi $(BUILD_DIR)/$*.mobi
+	mv $(TEMP_DIR)/$*-mobi/content.mobi $(MOBI_BUILD_DIR)/$*.mobi
 
 	# Clean up all the temporary files.
 	rm -rf $(TEMP_DIR)/$*-mobi
@@ -276,8 +297,8 @@ $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 # HTML
 #
 
-$(BUILD_DIR)/%.html: $(BUILD_DIR)/%.xml
+$(HTML_BUILD_DIR)/%.html: $(XML_BUILD_DIR)/%.xml
 	saxonb-xslt \
 		-xsl:$(STYLE_DIR)/html/$(HTML_STYLE).xsl \
-		-s:$(BUILD_DIR)/$*.xml \
-		-o:$(BUILD_DIR)/$*.html
+		-s:$(XML_BUILD_DIR)/$*.xml \
+		-o:$(HTML_BUILD_DIR)/$*.html
