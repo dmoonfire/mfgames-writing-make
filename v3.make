@@ -12,10 +12,10 @@
 # the v3-vars.make doesn't set it or doesn't exist.
 
 # Directories
-STYLE_DIR   ?= style
-SOURCE_DIR  ?= .
-BUILD_DIR   ?= build
-TEMP_DIR    ?= build/tmp
+STYLE_DIR     ?= style
+SOURCE_DIR    ?= .
+BUILD_DIR     ?= build
+TEMP_DIR      ?= build/tmp
 
 # Programs
 KINDLEGEN   = /opt/kindlegen/kindlegen
@@ -34,7 +34,7 @@ PDF_STYLE   ?= plain
 all:
 
 clean:
-	rm -fr $(BUILD_DIR) $(TEMP_DIR)
+	rm -fr $(PDF_BUILD_DIR) $(BUILD_DIR) $(TEMP_DIR)
 	rm -f *~ *.fo
 
 #
@@ -51,20 +51,30 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.txt
 #
 
 $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
+	# Even if we don't have it, we want to make sure we have the files needed.
 	mkdir -p $(TEMP_DIR)/$(dir $*)
 
+	# Copy the file into the teporary locatino.
 	cp $(SOURCE_DIR)/$*.xml $(TEMP_DIR)/$*.xml
 
-$(BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml 
-	$(MAKE) $(addprefix $(TEMP_DIR)/$(dir $*), $(shell mfgames-docbook depends -i $(TEMP_DIR)/$*.xml))
+	# Make all the dependencies on this file first into the TEMP_DIR.
+	$(MAKE) $(addprefix $(TEMP_DIR)/$(dir $*), $(shell mfgames-docbook depends -i $(SOURCE_DIR)/$*.xml))
 
+	# Cobine all the XML into a single one.
 	mfgames-docbook gather --force $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather
 
-	mkdir -p $(BUILD_DIR)/$(dir $*)
-	cp $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(BUILD_DIR)/$(dir $*)
+	# Put it back in place of the file.
+	mv $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(TEMP_DIR)/$*.xml
 
-$(BUILD_DIR)/%.xml: $(BUILD_DIR)/%/index.xml
-	cp $(BUILD_DIR)/$*/index.xml $(BUILD_DIR)/$*.xml
+	# Remove the gather directory.
+	rm -rf $(TEMP_DIR)/$*-gather
+
+$(TEMP_DIR)/%.xml: $(TEMP_DIR)/%/index.xml
+	cp $(TEMP_DIR)/$*/index.xml $(TEMP_DIR)/$*.xml
+
+$(BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml 
+	mkdir -p $(BUILD_DIR)/$(dir $*)
+	cp $(TEMP_DIR)/$*.xml $(BUILD_DIR)/$*.xml
 
 #
 # ODT
