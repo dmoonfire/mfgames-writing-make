@@ -131,6 +131,8 @@ $(DOCX_BUILD_DIR)/%.docx: $(ODT_BUILD_DIR)/%.odt
 #
 
 $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
+	mkdir -p $(TEMP_DIR)/$(dir $*)
+
 	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(XML_BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
 
 	# Escape the generated LaTeX.
@@ -303,3 +305,9 @@ $(HTML_BUILD_DIR)/%.html: $(XML_BUILD_DIR)/%.xml
 		-xsl:$(STYLE_DIR)/html/$(HTML_STYLE).xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(HTML_BUILD_DIR)/$*.html
+
+#
+# Guides
+#
+
+.SECONDARY: $(JPG_BUILD_DIR)/%.jpg
