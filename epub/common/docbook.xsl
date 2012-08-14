@@ -90,12 +90,12 @@
   </xsl:template>
 
   <xsl:template match="d:copyright">
-	<para>
+	<p>
 	  <xsl:text>Copyright &#169; </xsl:text>
 	  <xsl:value-of select="d:year"/>
 	  <xsl:text> </xsl:text>
 	  <xsl:value-of select="d:holder"/>
-	</para>
+	</p>
   </xsl:template>
 
   <!-- Dedication -->
