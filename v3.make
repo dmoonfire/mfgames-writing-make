@@ -29,6 +29,7 @@ TEMP_DIR      ?= build/tmp
 
 # Programs
 KINDLEGEN   = /opt/kindlegen/kindlegen
+XELATEX     ?= xelatex
 
 # Styles
 COVER_STYLE ?= plain
@@ -136,10 +137,10 @@ $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(XML_BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
 
 	# Escape the generated LaTeX.
+#		sed 's@#@\\#@g' |
 	cat $(TEMP_DIR)/$*.tex | \
-		sed 's@\$$@\\$$@g' | \
-		sed 's@#@\\#@g' | \
 		sed 's@&@\\&@g' | \
+		sed 's@\$$@\\$$@g' | \
 		sed 's@\^@\\^@g' > $(TEMP_DIR)/$(dir $*)/styled.tex
 	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
 
@@ -157,11 +158,11 @@ $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 
 $(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
 	cd $(TEMP_DIR)/$(dir $*) && \
-		xelatex -halt-on-error $(notdir $*).tex > /dev/null
+		$(XELATEX) -halt-on-error $(notdir $*).tex
 	cd $(TEMP_DIR)/$(dir $*) && \
-		xelatex -halt-on-error $(notdir $*).tex > /dev/null
+		$(XELATEX) -halt-on-error $(notdir $*).tex > /dev/null
 	cd $(TEMP_DIR)/$(dir $*) && \
-		xelatex -halt-on-error $(notdir $*).tex > /dev/null
+		$(XELATEX) -halt-on-error $(notdir $*).tex > /dev/null
 
 $(PDF_BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 	mkdir -p $(PDF_BUILD_DIR)/$(dir $*)
@@ -202,6 +203,10 @@ $(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(XML_BU
 
 	# Ensure that the OPF file has a unique identifier.
 	mfgames-opf uid-generate $(TEMP_DIR)/$*-epub/content.opf
+
+	# Add in the various references.
+	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do if [ ! -f $(TEMP_DIR)/$*-epub/$$file ];then cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file;fi;mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$file $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
+
 
 $(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
@@ -310,4 +315,4 @@ $(HTML_BUILD_DIR)/%.html: $(XML_BUILD_DIR)/%.xml
 # Guides
 #
 
-.SECONDARY: $(JPG_BUILD_DIR)/%.jpg
+.PRECIOUS: $(JPG_BUILD_DIR)/%.jpg $(MOBI_BUILD_DIR)/%.mobi $(EPUB_BUILD_DIR)/%.epub $(PDF_BUILD_DIR)/%.pdf $(ODT_BUILD_DIR)/%.odt $(DOC_BUILD_DIR)/%.doc

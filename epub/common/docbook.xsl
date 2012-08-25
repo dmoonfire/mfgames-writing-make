@@ -61,7 +61,7 @@
 	</xsl:call-template>
   </xsl:template>
 
-  <xsl:template match="/d:article">
+  <xsl:template match="/d:article" priority="1">
 	<h1 class='page'>
 	  <xsl:call-template name="insert-anchor"/>
 	  <xsl:apply-templates select="d:info/d:title"/>
@@ -141,7 +141,7 @@
   </xsl:template>
 
   <!-- Chapters, Sections with Titles -->
-  <xsl:template match="d:chapter|d:appendix|d:preface">
+  <xsl:template match="d:chapter|d:appendix|d:preface|d:article">
 	<xsl:param name="depth"/>
 
 	<!-- Give the section a heading title based on the level. -->
