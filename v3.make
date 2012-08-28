@@ -38,6 +38,9 @@ HTML_STYLE  ?= plain
 ODT_STYLE   ?= plain
 PDF_STYLE   ?= plain
 
+# Parameters
+CREOLE2DOCBOOK_PARAMS = --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook
+
 #
 # Top-Level Rules
 #
@@ -55,7 +58,9 @@ clean:
 $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.txt
 	mkdir -p $(TEMP_DIR)/$(dir $*)
 
-	mfgames-creole docbook --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(SOURCE_DIR)/$*.txt
+	mfgames-creole docbook $(CREOLE2DOCBOOK_PARAMS) --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(SOURCE_DIR)/$*.txt
+
+	xmllint $(TEMP_DIR)/$*.xml > /dev/null
 
 #
 # XML
@@ -98,7 +103,7 @@ $(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
 	zip -u -j $(XML_BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
 
 	mkdir -p $(ODT_BUILD_DIR)/$(dir $*)
-	mv $(XML_BUILD_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
+	-mv $(XML_BUILD_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
 
 #
 # RTF
