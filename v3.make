@@ -76,8 +76,14 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 	# Make all the dependencies on this file first into the TEMP_DIR.
 	$(MAKE) $(addprefix $(TEMP_DIR)/$(dir $*), $(shell mfgames-docbook depends -i $(SOURCE_DIR)/$*.xml))
 
-	# Cobine all the XML into a single one.
-	mfgames-docbook gather --force $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather
+	# Combine all the XML into a single one. We don't process cover
+	# since we'll be manually converting that file into cover.jpg.
+	mfgames-docbook gather --copy-media --force \
+		--exclude-media=cover.jpg \
+		$(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather \
+		--directory-root=$(TEMP_DIR) \
+		--media-destination=$(TEMP_DIR)/$(dir $*) \
+		--media-search $(TEMP_DIR) $(SOURCE_DIR)
 
 	# Put it back in place of the file.
 	mv $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(TEMP_DIR)/$*.xml
