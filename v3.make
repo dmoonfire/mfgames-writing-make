@@ -118,7 +118,7 @@ $(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
 $(RTF_BUILD_DIR)/%.rtf: $(ODT_BUILD_DIR)/%.odt
 	unoconv -f rtf $(ODT_BUILD_DIR)/$*.odt
 	mkdir -p $(RTF_BUILD_DIR)/$(dir $*)
-	mv $(ODT_BUILD_DIR)/$*.odt $(RTF_BUILD_DIR)/$*.rtf
+	mv $(ODT_BUILD_DIR)/$*.rtf $(RTF_BUILD_DIR)/$*.rtf
 
 #
 # DOC
