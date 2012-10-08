@@ -187,7 +187,7 @@
 
   <xsl:template match="d:epigraph">
     <xsl:text>\epigraph{</xsl:text>
-    <xsl:apply-templates />
+    <xsl:apply-templates select="d:para|d:simpara"/>
     <xsl:text>}{\scriptsize \textit{</xsl:text>
     <xsl:value-of select="d:attribution"/>
     <xsl:text>}}</xsl:text>
