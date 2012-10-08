@@ -39,7 +39,7 @@ ODT_STYLE   ?= plain
 PDF_STYLE   ?= plain
 
 # Parameters
-CREOLE2DOCBOOK_PARAMS = --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook
+CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=unicode
 
 #
 # Top-Level Rules
@@ -102,7 +102,11 @@ $(XML_BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml
 # ODT
 #
 
-$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
+$(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml: $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.odt
+	unzip -p $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.odt styles.xml \
+		> $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
+
+$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
 	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
 	zip -d $(XML_BUILD_DIR)/$*.odt styles.xml
