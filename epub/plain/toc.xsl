@@ -2,7 +2,7 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:d="http://docbook.org/ns/docbook"
     xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:mbp="mobi"
+	xmlns:mfw="urn:mfgames:writing:docbook,0"
     version="2.0">
   <!-- This doesn't use the standard DocBook stylesheets. Instead, it
        is just a simple conversion of a DocBook document into HTML for
@@ -55,10 +55,22 @@
 
 	  <xsl:if test="@id">
 		<a href="content.html#{@id}">
+		  <xsl:apply-templates select="." mode="insert-number">
+			<xsl:with-param name="index">
+			  <xsl:value-of select="position()"/>
+			</xsl:with-param>
+		  </xsl:apply-templates>
+
 		  <xsl:apply-templates select="d:info/d:title"/>
 		</a>
 	  </xsl:if>
 	  <xsl:if test="not(@id)">
+		<xsl:apply-templates select="." mode="insert-number">
+		  <xsl:with-param name="index">
+			<xsl:value-of select="position()"/>
+		  </xsl:with-param>
+		</xsl:apply-templates>
+		
 		<xsl:apply-templates select="d:info/d:title"/>
 	  </xsl:if>	  
 	</p>
@@ -91,6 +103,19 @@
 
   <!-- Structural Elements -->
   <xsl:template match="*" priority="-1" />
+
+  <!-- Numbering -->
+  <xsl:template match="d:chapter" mode="insert-number">
+	<xsl:param name="index"/>
+
+	<xsl:if test="not(//mfw:output/@chapter-numbers = 'none')">
+	  <xsl:text>Chapter </xsl:text>
+	  <xsl:value-of select="$index"/>
+	  <xsl:text>: </xsl:text>
+	</xsl:if>
+  </xsl:template>
+
+  <xsl:template match="*" mode="insert-number" priority="-1"/>
 
   <!-- Info -->
   <xsl:template match="d:title">

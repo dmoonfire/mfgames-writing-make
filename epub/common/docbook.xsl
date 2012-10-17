@@ -2,8 +2,8 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:d="http://docbook.org/ns/docbook"
     xmlns="http://www.w3.org/1999/xhtml"
-	xmlns:mbp="mobi"
 	xmlns:xlink="http://www.w3.org/1999/xlink"
+	xmlns:mfw="urn:mfgames:writing:docbook,0"
     version="2.0">
   <!-- Includes various other components -->
   <xsl:include href="../common/inline.xsl"/>
@@ -148,6 +148,11 @@
 	<xsl:element name="h{$depth}">
 	  <xsl:attribute name="class">page</xsl:attribute>
 	  <xsl:call-template name="insert-anchor"/>
+	  <xsl:apply-templates select="." mode="insert-number">
+		<xsl:with-param name="index">
+		  <xsl:value-of select="position()"/>
+		</xsl:with-param>
+	  </xsl:apply-templates>
 	  <xsl:apply-templates select="d:info/d:title"/>
 	</xsl:element>
 
@@ -187,6 +192,19 @@
   <xsl:template match="d:section[not(d:info/d:title)]">
 	<xsl:message>Sections without Title are not supported.</xsl:message>
   </xsl:template>
+
+  <!-- Numbering -->
+  <xsl:template match="d:chapter" mode="insert-number">
+	<xsl:param name="index"/>
+
+	<xsl:if test="not(//mfw:output/@chapter-numbers = 'none')">
+	  <xsl:text>Chapter </xsl:text>
+	  <xsl:value-of select="$index"/>
+	  <br/>
+	</xsl:if>
+  </xsl:template>
+
+  <xsl:template match="*" mode="insert-number" priority="-1"/>
 
   <!-- Structural Catches -->
   <xsl:template match="*" mode="title" priority="-1"/>
