@@ -68,28 +68,13 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.txt
 
 $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 	# Even if we don't have it, we want to make sure we have the files needed.
-	mkdir -p $(TEMP_DIR)/$(dir $*)
-
-	# Copy the file into the teporary locatino.
-	cp $(SOURCE_DIR)/$*.xml $(TEMP_DIR)/$*.xml
-
-	# Make all the dependencies on this file first into the TEMP_DIR.
-	$(MAKE) $(addprefix $(TEMP_DIR)/$(dir $*), $(shell mfgames-docbook depends -i $(SOURCE_DIR)/$*.xml))
+	mkdir -p $(TEMP_DIR)/$(dir $*)$(notdir $*)
 
 	# Combine all the XML into a single one. We don't process cover
 	# since we'll be manually converting that file into cover.jpg.
-	mfgames-docbook gather --copy-media --force \
-		--exclude-media=cover.jpg \
-		$(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather \
-		--directory-root=$(TEMP_DIR) \
-		--media-destination=$(TEMP_DIR)/$(dir $*) \
-		--media-search $(TEMP_DIR) $(SOURCE_DIR)
-
-	# Put it back in place of the file.
-	mv $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(TEMP_DIR)/$*.xml
-
-	# Remove the gather directory.
-	rm -rf $(TEMP_DIR)/$*-gather
+	mfgames-writing docbook gather \
+		$(SOURCE_DIR)/$*.xml $(TEMP_DIR)/$*.xml \
+		--media-directory=$(TEMP_DIR)/$(dir $*)$(notdir $*)
 
 $(TEMP_DIR)/%.xml: $(TEMP_DIR)/%/index.xml
 	cp $(TEMP_DIR)/$*/index.xml $(TEMP_DIR)/$*.xml
@@ -219,9 +204,12 @@ $(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(XML_BU
 	# Ensure that the OPF file has a unique identifier.
 	mfgames-opf uid-generate $(TEMP_DIR)/$*-epub/content.opf
 
-	# Add in the various references.
-	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do if [ ! -f $(TEMP_DIR)/$*-epub/$$file ];then cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file;fi;mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$file $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
+	# Copy in the media files.
+	mkdir -p $(TEMP_DIR)/$*-epub/$(notdir $*)
+	cp -v $(TEMP_DIR)/$(dir $*)/$(notdir $*)/* $(TEMP_DIR)/$*-epub/$(notdir $*)
 
+	#for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do if [ ! -f $(TEMP_DIR)/$*-epub/$$file ];then cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file;fi;mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$file $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
+	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$(basename $$file .jpg) $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
 
 $(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
