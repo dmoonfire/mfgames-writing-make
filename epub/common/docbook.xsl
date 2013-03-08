@@ -158,9 +158,10 @@
 
 	<!-- If we have an authors, then add them automatically. -->
 	<xsl:if test="d:info//d:author">
-	  <div class='bylinegroup'>
-		<xsl:apply-templates select="d:info//d:author" mode="chapter"/>
-	  </div>
+	  <!--<div class='bylinegroup'>-->
+	  <xsl:apply-templates select="d:info//d:author" mode="chapter"/>
+	  <p>&#160;</p>
+	  <!--</div>-->
 	</xsl:if>
 
 	<!-- Include the contents of the section. -->
@@ -231,13 +232,13 @@
   </xsl:template>
   
   <xsl:template match="d:author" mode="chapter">
-	<h2 class='bylinesingle'>
+	<p class='bylinesingle'>
 	  <xsl:value-of select="d:personname/d:firstname"/>
 	  <xsl:text> </xsl:text>
 	  <xsl:value-of select="d:personname/d:othername"/>
 	  <xsl:text> </xsl:text>
 	  <xsl:value-of select="d:personname/d:surname"/>
-	</h2>
+	</p>
   </xsl:template>
 
   <xsl:template match="d:author" mode='title'>

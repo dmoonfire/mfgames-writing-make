@@ -26,4 +26,9 @@
 	  <xsl:apply-templates/>
 	</a>
   </xsl:template>
+
+  <!-- Superscript -->
+  <xsl:template match="d:superscript">
+	<sup><xsl:apply-templates/></sup>
+  </xsl:template>
 </xsl:stylesheet>

@@ -15,4 +15,21 @@
 
   <!-- Fonts -->
   <xsl:variable name="font.main">Linux Libertine O</xsl:variable>
+
+  <!-- Headers and Footers -->
+  <xsl:template match="d:*" mode="pagestyle.header.odd.left">
+    <xsl:text>{\scriptsize </xsl:text>
+    <xsl:call-template name="person.name"/>
+    <xsl:text>}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="d:*" mode="pagestyle.header.odd.center">
+    <xsl:text>{\scriptsize \thepage}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="d:*" mode="pagestyle.header.odd.right">
+    <xsl:text>{\scriptsize </xsl:text>
+    <xsl:apply-templates select="d:info/d:title"/>
+    <xsl:text>}</xsl:text>
+  </xsl:template>
 </xsl:stylesheet>

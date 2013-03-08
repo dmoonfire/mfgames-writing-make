@@ -121,6 +121,7 @@
 
   <!-- Structural Elements -->
   <xsl:template match="d:chapter|d:preface">
+	<xsl:message>Chapter</xsl:message>
     <xsl:text>\chapter{</xsl:text>
     <xsl:call-template name="insert-title"/>
     <xsl:text>}</xsl:text>

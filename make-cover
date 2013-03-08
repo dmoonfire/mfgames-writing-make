@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# USAGE: make-cover "Title" "Author"
+
+#
+# Variables
+#
+
+TITLE=$1
+AUTHOR=$2
+
+#
+# Title
+#
+
+# Create the border lines.
+convert -size 700x2 canvas:white \
+	-stroke black -strokewidth 10 \
+    -draw "line 0,0 700,0" \
+    /tmp/line.png
+
+# Create the title for the top part of the screen.
+convert -size 700x -background white -fill black \
+	-gravity Center \
+	-font Gentium-Basic-Bold -pointsize 72 \
+	caption:"$TITLE" \
+	/tmp/title.png
+
+# Create the author name on the bottom.
+convert -size 700x -background white -fill black \
+	-gravity Center \
+	-font Gentium-Basic-Bold -pointsize 64 \
+	caption:"$AUTHOR" \
+	/tmp/author.png
+
+# Combine the titles with the lines.
+montage \
+	-geometry 700x \
+	/tmp/line.png /tmp/title.png /tmp/line.png \
+	-tile 1x \
+	/tmp/title.png
+
+# Create a white background image to populate.
+convert -size 800x1200 canvas:white \
+	/tmp/background.png
+
+# Combine everything together.
+composite -geometry +50+200 /tmp/title.png \
+	/tmp/background.png /tmp/background.png
+composite -geometry +50+1000 /tmp/author.png \
+	/tmp/background.png /tmp/background.png

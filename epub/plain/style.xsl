@@ -36,6 +36,8 @@
 }
 
 .bylinesingle {
+  font-weight: bold;
+  text-align: center;
 }
 
 .byline {
@@ -86,6 +88,12 @@
   margin: 0 0 0 6em;
   padding: 0;
   text-indent: 0;
+}
+
+.noindent {
+  text-indent: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .slab {
