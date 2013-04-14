@@ -240,15 +240,18 @@ $(JPG_BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
 	cp $(SOURCE_DIR)/$*.jpg $(JPG_BUILD_DIR)/$*.jpg
 
 $(JPG_BUILD_DIR)/%.jpg: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
-	# We have to create a cover using `fop`.
-	mkdir -p $(TEMP_DIR)/$*-cover
-	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/cover/$(COVER_STYLE).xsl \
-		-s:$(XML_BUILD_DIR)/$*.xml \
-		-o:$(TEMP_DIR)/$*-cover/cover.fop
-
-	# Create the PNG version of the cover.
-	fop $(TEMP_DIR)/$*-cover/cover.fop -png $(TEMP_DIR)/$*-cover/cover.png
+#	# We have to create a cover using `fop`.
+	mkdir -p $(TEMP_DIR)/$*-cover $(JPG_BUILD_DIR)/$(dir $*)
+	$(dir $(lastword $(MAKEFILE_LIST)))make-cover \
+		"$(shell mfgames-docbook query $(XML_BUILD_DIR)/$*.xml)" \
+		"$(shell mfgames-docbook query --select=d:author/d:personname/d:fullname $(XML_BUILD_DIR)/$*.xml)" \
+		$(TEMP_DIR)/$*-cover/cover.png
+#	saxonb-xslt \
+#		-xsl:$(STYLE_DIR)/cover/$(COVER_STYLE).xsl \
+#		-s:$(XML_BUILD_DIR)/$*.xml \
+#		-o:$(TEMP_DIR)/$*-cover/cover.fop
+#	# Create the PNG version of the cover.
+#	fop $(TEMP_DIR)/$*-cover/cover.fop -png $(TEMP_DIR)/$*-cover/cover.png
 
 	# Convert the PNG to JPG.
 	convert $(TEMP_DIR)/$*-cover/cover.png -quality 75 $(JPG_BUILD_DIR)/$*.jpg

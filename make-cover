@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# USAGE: make-cover "Title" "Author"
+# USAGE: make-cover "Title" "Author" output.png
 
 #
 # Variables
@@ -8,6 +8,12 @@
 
 TITLE=$1
 AUTHOR=$2
+OUTPUT=$3
+
+AUTHOR_IMAGE=/tmp/author-$$.png
+BACKGROUND_IMAGE=/tmp/background-$$.png
+TITLE_IMAGE=/tmp/title-$$.png
+LINE_IMAGE=/tmp/line-$$.png
 
 #
 # Title
@@ -17,35 +23,41 @@ AUTHOR=$2
 convert -size 700x2 canvas:white \
 	-stroke black -strokewidth 10 \
     -draw "line 0,0 700,0" \
-    /tmp/line.png
+    $LINE_IMAGE 
 
 # Create the title for the top part of the screen.
 convert -size 700x -background white -fill black \
 	-gravity Center \
 	-font Gentium-Basic-Bold -pointsize 72 \
 	caption:"$TITLE" \
-	/tmp/title.png
+	$TITLE_IMAGE
 
 # Create the author name on the bottom.
 convert -size 700x -background white -fill black \
 	-gravity Center \
 	-font Gentium-Basic-Bold -pointsize 64 \
 	caption:"$AUTHOR" \
-	/tmp/author.png
+	$AUTHOR_IMAGE
 
 # Combine the titles with the lines.
 montage \
 	-geometry 700x \
-	/tmp/line.png /tmp/title.png /tmp/line.png \
+	$LINE_IMAGE $TITLE_IMAGE $LINE_IMAGE \
 	-tile 1x \
-	/tmp/title.png
+        $TITLE_IMAGE
 
 # Create a white background image to populate.
 convert -size 800x1200 canvas:white \
-	/tmp/background.png
+        $BACKGROUND_IMAGE
 
 # Combine everything together.
-composite -geometry +50+200 /tmp/title.png \
-	/tmp/background.png /tmp/background.png
-composite -geometry +50+1000 /tmp/author.png \
-	/tmp/background.png /tmp/background.png
+composite -geometry +50+200 $TITLE_IMAGE \
+        $BACKGROUND_IMAGE $BACKGROUND_IMAGE
+composite -geometry +50+1000 $AUTHOR_IMAGE \
+        $BACKGROUND_IMAGE $BACKGROUND_IMAGE
+
+# Move it into the output location.
+mv $BACKGROUND_IMAGE $OUTPUT
+
+# Clean up the rest of the files.
+rm $AUTHOR_IMAGE $TITLE_IMAGE $LINE_IMAGE
