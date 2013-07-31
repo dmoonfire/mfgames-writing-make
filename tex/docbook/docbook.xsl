@@ -34,6 +34,12 @@
   <xsl:variable name="font.main">Courier New</xsl:variable>
   <xsl:variable name="package.titlesec.options"></xsl:variable>
 
+  <xsl:variable name="epigraph.width">4in</xsl:variable>
+  <xsl:variable name="margin.top">1in</xsl:variable>
+  <xsl:variable name="margin.bottom">1in</xsl:variable>
+  <xsl:variable name="margin.inner">1in</xsl:variable>
+  <xsl:variable name="margin.outer">1in</xsl:variable>
+
   <xsl:template name="additional-usepackage"/>
 
   <!-- Top-Level Book -->
@@ -68,17 +74,16 @@
     <!-- Set up the fonts for the document -->
     <xsl:text>\setmainfont{</xsl:text>
     <xsl:value-of select="$font.main"/>
-    <xsl:text>}
-\newcommand\volis[1]{{\fontspec{Solomon Sans SemiBold}\fontsize{9pt}{9pt}\selectfont #1}}
-\newcommand\sepfont[1]{{\fontspec{Courier New}\fontsize{9pt}{9pt}\selectfont #1}}
-
+    <xsl:text>}</xsl:text>
+	<xsl:apply-templates select="." mode="fonts"/>
+    <xsl:text>
 \def\center{\trivlist \centering\item\relax}
 \def\endcenter{\endtrivlist}
 
 \raggedbottom
 
 \epigraphfontsize{\footnotesize}
-\setlength{\epigraphwidth}{3.5in}
+\setlength{\epigraphwidth}{</xsl:text><xsl:value-of select="$epigraph.width"/><xsl:text>}
 \setlength{\epigraphrule}{0pt}
 \epigraphposition{center}
 \epigraphtextposition{raggedright}
@@ -95,6 +100,13 @@
     <xsl:apply-templates select="d:info/d:title"/>
     <xsl:text>}</xsl:text>
     <xsl:call-template name="newline"/>
+
+	<xsl:text>
+%% lr margin is really out inner/outer
+\setlrmarginsandblock{</xsl:text><xsl:value-of select="$margin.inner"/><xsl:text>}{</xsl:text><xsl:value-of select="$margin.outer"/><xsl:text>}{*}
+\setulmarginsandblock{</xsl:text><xsl:value-of select="$margin.top"/><xsl:text>}{</xsl:text><xsl:value-of select="$margin.bottom"/><xsl:text>}{*}
+\checkandfixthelayout
+    </xsl:text>
 
     <!-- Begin the document. -->
     <xsl:text>\begin{document}</xsl:text>
@@ -203,7 +215,7 @@
   </xsl:template>
 
   <!-- Address -->
-  <xsl:template match="d:street|d:city">
+  <xsl:template match="d:street|d:city|d:otheraddr">
     <xsl:text>\\</xsl:text>
     <xsl:apply-templates/>
   </xsl:template>

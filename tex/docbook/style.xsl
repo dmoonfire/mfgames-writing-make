@@ -4,6 +4,13 @@
     xmlns:d="http://docbook.org/ns/docbook"
     xmlns:fo="http://www.w3.org/1999/XSL/Format"
     version="2.0">
+  <xsl:template match="d:*" mode="fonts">
+	<xsl:text>
+\newcommand\volis[1]{{\fontspec{Solomon Sans SemiBold}\fontsize{9pt}{9pt}\selectfont #1}}
+\newcommand\sepfont[1]{{\fontspec{Courier New}\fontsize{9pt}{9pt}\selectfont #1}}
+    </xsl:text>
+  </xsl:template>
+
   <xsl:template match="d:*" mode="pagestyle">
     <xsl:text>\makepagestyle{custompage}</xsl:text>
 
