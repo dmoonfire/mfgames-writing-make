@@ -11,7 +11,6 @@
        This doesn't generate a table of contents (see kindletoc for
        that) and it only generates ID fields for those elements that
        have one. -->
-
   <!-- `kindlegen` doesn't like the DOCTYPE. -->
   <xsl:output method="xml" />
 

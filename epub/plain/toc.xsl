@@ -42,14 +42,23 @@
   <xsl:template match="d:book|d:chapter|d:article|d:section|d:appendix">
 	<xsl:param name="depth"/>
 
+	<xsl:apply-templates select="d:dedication|d:acknowledgments">
+	  <xsl:with-param name="depth">
+		<xsl:value-of select="number($depth)"/>
+	  </xsl:with-param>
+	</xsl:apply-templates>
+
     <!-- Include the name of the article as a heading 1. -->	
 	<p>
 	  <xsl:choose>
+		<xsl:when test="number($depth) = 0">
+		  <xsl:attribute name="class">indent1</xsl:attribute>
+		</xsl:when>
 		<xsl:when test="number($depth) = 1">
-		  <xsl:text>&#160;&#160;&#160;&#160;</xsl:text>
+		  <xsl:attribute name="class">indent2</xsl:attribute>
 		</xsl:when>
 		<xsl:when test="number($depth) = 2">
-		  <xsl:text>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;</xsl:text>
+		  <xsl:attribute name="class">indent3</xsl:attribute>
 		</xsl:when>
 	  </xsl:choose>
 
@@ -90,15 +99,15 @@
   </xsl:template>
 
   <xsl:template match="d:colophon">
-	<p><a href="content.html#colophon">Colophon</a></p>
+	<p class='indent1'><a href="content.html#colophon">Colophon</a></p>
   </xsl:template>
 
   <xsl:template match="d:dedication">
-	<p>Dedication</p>
+	<p class='indent1'><a href="content.html#dedication">Dedication</a></p>
   </xsl:template>
 
-  <xsl:template match="d:acknowledgment">
-	<p>Acknowledgment</p>
+  <xsl:template match="d:acknowledgments">
+	<p class='indent1'><a href="content.html#acknowledgments">Acknowledgments</a></p>
   </xsl:template>
 
   <!-- Structural Elements -->

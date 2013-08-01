@@ -7,5 +7,15 @@
   <xsl:template match="d:legalnotice">
     <xsl:text>\clearpage </xsl:text>
     <xsl:apply-templates/>
+	<xsl:apply-templates select="../d:copyright"/>
+  </xsl:template>
+
+  <xsl:template match="d:copyright">
+	<xsl:text>\begin{center}</xsl:text>
+	<xsl:text>Copyright &#169; </xsl:text>
+	<xsl:value-of select="d:year"/>
+	<xsl:text> </xsl:text>
+	<xsl:value-of select="d:holder"/>
+	<xsl:text>\end{center}</xsl:text>
   </xsl:template>
 </xsl:stylesheet>

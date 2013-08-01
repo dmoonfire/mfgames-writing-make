@@ -3,16 +3,28 @@
     xmlns:d="http://docbook.org/ns/docbook"
     xmlns="http://www.w3.org/1999/xhtml"
     version="2.0">
+  <xsl:variable name="css.font"/>
+  <xsl:variable name="css.font.body">serif</xsl:variable>
+  <xsl:variable name="css.font.page">sans</xsl:variable>
+  <xsl:variable name="css.font.title">sans</xsl:variable>
+
   <xsl:template match="d:book|d:article" mode="css-style">
 	<style type="text/css">
+<xsl:value-of select="$css.font" />
+<xsl:text>
+body {
+  font-family: </xsl:text><xsl:value-of select="$css.font.body"/><xsl:text>;
+}
+
 .page {
-  font-family: sans;
+  font-family: </xsl:text><xsl:value-of select="$css.font.page"/><xsl:text>;
   text-align: center;
   margin-bottom: 1em;
   page-break-before: always;
 }
 
 .title {
+  font-family: </xsl:text><xsl:value-of select="$css.font.title"/><xsl:text>;
   margin-top: 2em;
   text-align: center;
 }
@@ -121,6 +133,7 @@ div.blockquotedslab {
 .left {
   text-align: left;
 }
+</xsl:text>
 	</style>
   </xsl:template>
 </xsl:stylesheet>

@@ -32,7 +32,7 @@
 		<xsl:apply-templates select="*/d:info" mode="title"/>
 		<xsl:apply-templates select="*/d:info" mode="legal"/>
 		<xsl:apply-templates select="*/d:dedication" />
-		<xsl:apply-templates select="*/d:acknowledgements" />
+		<xsl:apply-templates select="*/d:acknowledgments" />
 
 		<!-- Contents -->
 		<xsl:apply-templates/>
@@ -105,6 +105,7 @@
 	<!-- Include the contents of the notice. -->
 	<div class='dedication'>
 	  <xsl:call-template name="insert-anchor"/>
+	  <xsl:attribute name="id">dedication</xsl:attribute>
 	  <xsl:apply-templates select="d:para|d:simpara"/>
 	</div>
   </xsl:template>
@@ -118,6 +119,7 @@
 	<xsl:element name="h{$depth}">
 	  <xsl:call-template name="insert-anchor"/>
 	  <xsl:attribute name="class">page</xsl:attribute>
+	  <xsl:attribute name="id">colophon</xsl:attribute>
 	  <xsl:text>Colophon</xsl:text>
 	</xsl:element>
 
@@ -126,13 +128,14 @@
   </xsl:template>
 
   <!-- Acknowledgments -->
-  <xsl:template match="d:acknowledgements">
+  <xsl:template match="d:acknowledgments">
 	<xsl:param name="depth"/>
 
 	<!-- Give the section a heading title based on the level. -->
 	<xsl:element name="h1">
 	  <xsl:call-template name="insert-anchor"/>
 	  <xsl:attribute name="class">page</xsl:attribute>
+	  <xsl:attribute name="id">acknowledgments</xsl:attribute>
 	  <xsl:text>Acknowledgements</xsl:text>
 	</xsl:element>
 

@@ -32,11 +32,14 @@ KINDLEGEN   = /opt/kindlegen/kindlegen
 XELATEX     ?= xelatex
 
 # Styles
-COVER_STYLE ?= plain
-EPUB_STYLE  ?= plain
-HTML_STYLE  ?= plain
-ODT_STYLE   ?= plain
-PDF_STYLE   ?= plain
+COVER_STYLE    ?= plain
+EPUB_STYLE     ?= plain
+HTML_STYLE     ?= plain
+ODT_STYLE      ?= plain
+PDF_STYLE      ?= plain
+
+EPUB_STYLE_DIR ?= $(STYLE_DIR)/epub/$(EPUB_STYLE)
+EPUB_EXTRAS    ?= echo
 
 # Parameters
 CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook
@@ -187,32 +190,32 @@ $(PDF_BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 # EPUB
 #
 
-$(TEMP_DIR)/%-epub/content.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl $(XML_BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/content.html: $(EPUB_STYLE_DIR)/content.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/content.xsl \
+		-xsl:$(EPUB_STYLE_DIR)/content.xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.html
 
-$(TEMP_DIR)/%-epub/toc.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl $(XML_BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/toc.html: $(EPUB_STYLE_DIR)/toc.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/toc.xsl \
+		-xsl:$(EPUB_STYLE_DIR)/toc.xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/toc.html
 
-$(TEMP_DIR)/%-epub/cover.html: $(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl $(XML_BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/cover.html: $(EPUB_STYLE_DIR)/cover.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/cover.xsl \
+		-xsl:$(EPUB_STYLE_DIR)/cover.xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/cover.html
 
-$(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(XML_BUILD_DIR)/%.xml
+$(TEMP_DIR)/%-epub/content.opf: $(EPUB_STYLE_DIR)/opf.xsl $(XML_BUILD_DIR)/%.xml
 	# Create the content OPF file using stylesheet.
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl \
+		-xsl:$(EPUB_STYLE_DIR)/opf.xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.opf
 
@@ -222,11 +225,11 @@ $(TEMP_DIR)/%-epub/content.opf: $(STYLE_DIR)/epub/$(EPUB_STYLE)/opf.xsl $(XML_BU
 	# Add in the various references.
 	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do if [ ! -f $(TEMP_DIR)/$*-epub/$$file ];then cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file;fi;mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$file $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
 
-$(TEMP_DIR)/%-epub/toc.ncx: $(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
+$(TEMP_DIR)/%-epub/toc.ncx: $(EPUB_STYLE_DIR)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
 	mkdir -p $(TEMP_DIR)/$*-epub
 	saxonb-xslt \
-		-xsl:$(STYLE_DIR)/epub/$(EPUB_STYLE)/ncx.xsl \
+		-xsl:$(EPUB_STYLE_DIR)/ncx.xsl \
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/toc.ncx
 
@@ -275,6 +278,9 @@ $(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEM
 	echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
 	echo '   </rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
 	echo '</container>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+
+	# Allow the calling class to make additional changes.
+	$(EPUB_EXTRAS) $(TEMP_DIR)/$*-epub/
 
 	# Zip all the contents of the file
 	cd $(TEMP_DIR)/$*-epub && zip -X0 epub.zip mimetype
