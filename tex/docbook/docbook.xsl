@@ -32,9 +32,16 @@
 
   <!-- Default Variables -->
   <xsl:variable name="font.main">Courier New</xsl:variable>
+  <xsl:variable name="font.main.features"></xsl:variable>
+
   <xsl:variable name="package.titlesec.options"></xsl:variable>
 
+  <xsl:variable name="epigraph.font"><xsl:value-of select="$font.main"/></xsl:variable>
+  <xsl:variable name="epigraph.font.size">9pt</xsl:variable>
+  <xsl:variable name="epigraph.attribution.font"><xsl:value-of select="$epigraph.font"/></xsl:variable>
+  <xsl:variable name="epigraph.attribution.font.size"><xsl:value-of select="$epigraph.font.size"/></xsl:variable>
   <xsl:variable name="epigraph.width">4in</xsl:variable>
+
   <xsl:variable name="margin.top">1in</xsl:variable>
   <xsl:variable name="margin.bottom">1in</xsl:variable>
   <xsl:variable name="margin.inner">1in</xsl:variable>
@@ -72,17 +79,39 @@
     <xsl:apply-templates select="." mode="setup"/>
 
     <!-- Set up the fonts for the document -->
-    <xsl:text>\setmainfont{</xsl:text>
+    <xsl:text>\setmainfont[</xsl:text>
+    <xsl:value-of select="$font.main.features"/>
+	<xsl:text>]{</xsl:text>
     <xsl:value-of select="$font.main"/>
     <xsl:text>}</xsl:text>
+
+	<!-- Set up the font and sizes for epigraphs. -->
+	<xsl:text>\newcommand\epigraphfont[1]{{\fontspec{</xsl:text>
+	<xsl:value-of select="$epigraph.font"/>
+	<xsl:text>}\fontsize{</xsl:text>
+	<xsl:value-of select="$epigraph.font.size"/>
+	<xsl:text>}{</xsl:text>
+	<xsl:value-of select="$epigraph.font.size"/>
+	<xsl:text>}\selectfont #1}}</xsl:text>
+
+	<!-- Set up the font and sizes for epigraph attributions. -->
+	<xsl:text>\newcommand\epigraphattributionfont[1]{{\fontspec{</xsl:text>
+	<xsl:value-of select="$epigraph.attribution.font"/>
+	<xsl:text>}\fontsize{</xsl:text>
+	<xsl:value-of select="$epigraph.attribution.font.size"/>
+	<xsl:text>}{</xsl:text>
+	<xsl:value-of select="$epigraph.attribution.font.size"/>
+	<xsl:text>}\selectfont #1}}</xsl:text>
+
+	<!-- Allow for any additional fonts in the style. -->
 	<xsl:apply-templates select="." mode="fonts"/>
+
     <xsl:text>
 \def\center{\trivlist \centering\item\relax}
 \def\endcenter{\endtrivlist}
 
 \raggedbottom
 
-\epigraphfontsize{\footnotesize}
 \setlength{\epigraphwidth}{</xsl:text><xsl:value-of select="$epigraph.width"/><xsl:text>}
 \setlength{\epigraphrule}{0pt}
 \epigraphposition{center}
@@ -199,9 +228,9 @@
   </xsl:template>
 
   <xsl:template match="d:epigraph">
-    <xsl:text>\epigraph{</xsl:text>
+    <xsl:text>\epigraph{\epigraphfont {</xsl:text>
     <xsl:apply-templates select="d:para|d:simpara"/>
-    <xsl:text>}{\scriptsize \textit{</xsl:text>
+    <xsl:text>}}{\epigraphattributionfont {</xsl:text>
     <xsl:value-of select="d:attribution"/>
     <xsl:text>}}</xsl:text>
     <xsl:call-template name="newline"/>
