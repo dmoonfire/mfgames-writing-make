@@ -1,0 +1,143 @@
+#!/usr/bin/perl
+
+# Converts a single Markdown+YAML file into an equivalent Creole.
+
+# USAGE: creole2markdown input.txt [output.markdown|-]
+
+#
+# Setup
+#
+
+# Directives
+use strict;
+use warnings;
+
+# Modules
+use Data::Dumper;
+use File::Find;
+use File::Basename;
+use YAML;
+
+#
+# Command-Line Processing
+#
+
+# Verify some of the usage.
+usage() unless @ARGV;
+usage() unless -f $ARGV[0];
+
+my $input_filename = $ARGV[0];
+
+# Figure out the output.
+my $output_filename = "-";
+$output_filename = $ARGV[1] if @ARGV > 1;
+
+# Pull out the elements we care about.
+my $dir = dirname($input_filename);
+my $filename = basename($input_filename);
+my $filepath = $input_filename;
+$filepath = "./" . $filepath unless $filepath =~ /^\./;
+
+# Report what we're processing.
+print STDERR "Converting $filename to Creole\n";
+
+# We have two sections in the resulting MarkDown file. The top is
+# the metadata section, which is not rendered, and the bottom is
+# the actual contents. In the original Creole, the metadata is a
+# "#" for the title and a bullet list of metadata, separated by a
+# newline.
+my @metadata = ();
+my @contents = ();
+my $found_blank_line = 0;
+my $last_was_blank = 0;
+
+# Slurp the entire file into memory.
+open INPUT, "<$input_filename" or die "Cannot open $input_filename ($!)";
+
+$/ = undef;
+my $buffer = <INPUT>;
+
+close INPUT;
+
+# Pull out the YAML header.
+unless ($buffer =~ s@^(---.*?---\n)@@s)
+{
+	die "Cannot find YAML header";
+}
+
+my $yaml_text = $1;
+my ($yaml) = Load($yaml_text);
+
+#
+# Create the header from the YAML.
+#
+
+my $header = "";
+
+if (exists $$yaml{"Title"})
+{
+	$header .= "= " . $$yaml{"Title"} . "\n";
+}
+
+my @headers = split(/\n/, $yaml_text);
+
+for my $line (@headers)
+{
+	next unless $line =~ /^([\w\s]+):.*$/;
+	my $key = $1;
+
+	next if $key eq "Title";
+	next if $key eq "Summary";
+	next if $key eq "LocalWords";
+
+	my $data = $$yaml{$key};
+
+	if ($key eq "Copyright")
+	{
+		$header .= "* Copyright: " . $$data[0] . ", " . $$data[1] . "\n";
+	}
+	else
+	{
+		if (ref($data) eq "ARRAY")
+		{
+			$data = join("; ", @$data);
+		}
+
+		$header .= "* $key: $data\n";
+	}
+}
+
+#
+# Convert the contents.
+#
+
+# Summary
+# Localwords
+if (exists $$yaml{"LocalWords"})
+{
+	$buffer = "\nLocalWords: " . $$yaml{"LocalWords"} . "\n" . $buffer;
+}
+
+# Swap the epigraph, if we have one.
+$buffer =~ s@(LocalWords:.*?)\n\n(>.*?)\n@$2\n\n$1\n@s;
+
+# Fix italics.
+$buffer =~ s@\*@//@sg;
+
+# We're finished with the input handle.
+close INPUT;
+
+# Open up the file handle to the output file.
+my $output_basename = basename($output_filename);
+open OUTPUT, ">$output_filename" or die "Cannot write to $output_basename ($!)";
+
+print OUTPUT "$header";
+print OUTPUT "$buffer";
+
+close OUTPUT;
+
+sub usage
+{
+	print STDERR "USAGE: $0 input.markdown [output.txt|-]\n";
+	exit 1;
+}

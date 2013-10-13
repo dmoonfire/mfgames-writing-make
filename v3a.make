@@ -55,6 +55,18 @@ clean:
 	rm -f *~ *.fo
 
 #
+# Markdown
+#
+
+$(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.markdown
+	mkdir -p $(TEMP_DIR)/$(dir $*)
+
+	$(dir $(lastword $(MAKEFILE_LIST)))markdown2creole $(SOURCE_DIR)/$*.markdown $(TEMP_DIR)/$*.txt
+	mfgames-creole docbook $(CREOLE2DOCBOOK_PARAMS) --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*.txt
+
+	xmllint $(TEMP_DIR)/$*.xml > /dev/null
+
+#
 # Creole
 #
 

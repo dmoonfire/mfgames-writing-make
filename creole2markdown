@@ -1,0 +1,190 @@
+#!/usr/bin/perl
+
+# Converts a single Creole-formatted file into an equivalent Markdown
+# with YAML.
+
+# USAGE: markdown2creole input.markdown [output.txt|-]
+
+#
+# Setup
+#
+
+# Directives
+use strict;
+use warnings;
+
+# Modules
+use File::Find;
+use File::Basename;
+
+#
+# Command-Line Processing
+#
+
+# Verify some of the usage.
+usage() unless @ARGV;
+usage() unless -f $ARGV[0];
+
+my $input_filename = $ARGV[0];
+
+# Figure out the output.
+my $output_filename = "-";
+$output_filename = $ARGV[1] if @ARGV > 1;
+
+# Pull out the elements we care about.
+my $dir = dirname($input_filename);
+my $filename = basename($input_filename);
+my $filepath = $input_filename;
+$filepath = "./" . $filepath unless $filepath =~ /^\./;
+
+# Report what we're processing.
+print STDERR "Converting $filename to Markdown\n";
+
+# We have two sections in the resulting MarkDown file. The top is
+# the metadata section, which is not rendered, and the bottom is
+# the actual contents. In the original Creole, the metadata is a
+# "#" for the title and a bullet list of metadata, separated by a
+# newline.
+my @metadata = ();
+my @contents = ();
+my $found_blank_line = 0;
+my $last_was_blank = 0;
+
+# Open up a file and stream through it.
+open INPUT, "<$input_filename" or die "Cannot open $input_filename ($!)";
+
+while (<INPUT>)
+{
+	# Clean up the line.
+	chomp;
+	
+	# If we have a "#", this is a level one heading which becomes the title.
+	if ($found_blank_line)
+	{
+		# We can encounter a couple lines that will eventually
+		# become metadata. In specific, "LocalWords:" for Emacs
+		# spell-checking and "SUMMARY:" which is the summary.
+		if (/^SUMMARY:\s*(.*?)$/)
+		{
+			push @metadata, "Summary: $1";
+			next;
+		}
+		
+		if (/^LocalWords:\s*(.*?)$/)
+		{
+			push @metadata, "LocalWords: $1";
+			next;
+		}
+
+		# Skip double-blank lines.
+		if ($_ =~ /^\s*$/)
+		{
+			next if $last_was_blank;
+			$last_was_blank = 1;
+		}
+		else
+		{
+			$last_was_blank = 0;
+		}
+
+		# Fix the italics.
+		s@//@*@sg;
+
+		# This would be the contents.
+		push @contents, $_;
+
+		# We're done with contents.
+		next;
+	}
+
+	# Everything after this is metadata for the file, which is
+	# ended by the newline.
+	if ($_ =~ /^\s*$/)
+	{
+		# Mark that we found a blank line, which means we're done
+		# with metadata parsing.
+		$found_blank_line = 1;
+		$last_was_blank = 1;
+		next;
+	}
+
+	# For metadata, we have two types of lines. Either a "# Title"
+	# which is the title line and "* Key: Value" line which is a
+	# metdata key/value pair.
+	if (/^\=\s*(.*?)\s*$/)
+	{
+		push @metadata, "Title: $1";
+	}
+
+	if (/^\*\s*(.*?)\s*:\s*(.*?)\s*$/)
+	{
+		# Pull out the fields.
+		my $key = $1;
+		my $data = $2;
+
+		# See if this has a semicolon-separated list.
+		if ($data =~ /;/)
+		{
+			# If there are no commas, we can make it a simple list.
+			my @parts = split(/\s*;\s*/, $data);
+
+			if ($data =~ /,/)
+			{
+				# Write it out as a YAML list.
+				push @metadata, "$key:";
+
+				foreach my $part (@parts)
+				{
+					push @metadata, "  - $part";
+				}
+			}
+			else
+			{
+				# Add it as a single-line list.
+				push @metadata, "$key: [" . join(", ", @parts) . "]";
+			}
+		}
+		elsif ($data =~ /,/)
+		{
+			# Split it on the commas.
+			my @parts = split(/\s*,\s*/, $data);
+			push @metadata, "$key: [" . join(", ", @parts) . "]";
+		}
+		else
+		{
+			# Check to see if we have single key elements that
+			# should be an array.
+			my $lc_key = lc($key);
+
+			if ($lc_key eq "assm" ||
+				$lc_key eq "sexuality" ||
+				$lc_key eq "theme")
+			{
+				$data = "[$data]";
+			}
+
+			# Push it as a single key.
+			push @metadata, "$key: $data";
+		}
+	}
+}
+
+# We're finished with the input handle.
+close INPUT;
+
+# Open up the file handle to the output file.
+my $output_basename = basename($output_filename);
+open OUTPUT, ">$output_filename" or die "Cannot write to $output_basename ($!)";
+
+print OUTPUT "---\n";
+print OUTPUT join("\n", @metadata), "\n";
+print OUTPUT "---\n\n";
+print OUTPUT join("\n", @contents), "\n";
+
+close OUTPUT;
+
+sub usage
+{
+	print STDERR "USAGE: $0 input.markdown [output.txt|-]\n";
+	exit 1;
+}

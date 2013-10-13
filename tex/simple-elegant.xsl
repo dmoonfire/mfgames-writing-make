@@ -12,6 +12,8 @@
   <xsl:variable name="document.class">
     letterpaper,12pt,oneside,openright,final,onecolumn
   </xsl:variable>
+  <xsl:variable name="generate.consistent.ids">0</xsl:variable>
+  <xsl:variable name="activate.external.olinks">0</xsl:variable>
 
   <!-- Fonts -->
   <xsl:variable name="font.main">Linux Libertine O</xsl:variable>
