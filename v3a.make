@@ -35,7 +35,7 @@ XELATEX     ?= xelatex
 COVER_STYLE    ?= plain
 EPUB_STYLE     ?= plain
 HTML_STYLE     ?= plain
-ODT_STYLE      ?= plain
+ODT_STYLE      ?= $(STYLE_DIR)/odt/plain
 PDF_STYLE      ?= plain
 
 EPUB_STYLE_DIR ?= $(STYLE_DIR)/epub/$(EPUB_STYLE)
@@ -65,6 +65,7 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.markdown
 	mfgames-creole docbook $(CREOLE2DOCBOOK_PARAMS) --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*.txt
 
 	xmllint $(TEMP_DIR)/$*.xml > /dev/null
+	jing /usr/share/xml/docbook/schema/rng/5.0/docbook.rng $(TEMP_DIR)/$*.xml
 
 #
 # Creole
@@ -117,15 +118,8 @@ $(XML_BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml
 # ODT
 #
 
-$(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml: $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.odt
-	unzip -p $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.odt styles.xml \
-		> $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
-
-$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
-	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(STYLE_DIR)/odt/$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
-
-	zip -d $(XML_BUILD_DIR)/$*.odt styles.xml
-	zip -u -j $(XML_BUILD_DIR)/$*.odt $(STYLE_DIR)/odt/$(ODT_STYLE)/styles.xml
+$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
+	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
 	mkdir -p $(ODT_BUILD_DIR)/$(dir $*)
 	-mv $(XML_BUILD_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
