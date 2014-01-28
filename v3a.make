@@ -12,20 +12,21 @@
 # the v3-vars.make doesn't set it or doesn't exist.
 
 # Directories
-STYLE_DIR     ?= style
-SOURCE_DIR    ?= .
-BUILD_DIR     ?= build
-XML_BUILD_DIR ?= $(BUILD_DIR)
-PDF_BUILD_DIR ?= $(BUILD_DIR)
-ODT_BUILD_DIR ?= $(BUILD_DIR)
-RTF_BUILD_DIR ?= $(ODT_BUILD_DIR)
-DOC_BUILD_DIR ?= $(ODT_BUILD_DIR)
+STYLE_DIR      ?= style
+SOURCE_DIR     ?= .
+JPG_SOURCE_DIR ?= $(SOURCE_DIR)
+BUILD_DIR      ?= build
+XML_BUILD_DIR  ?= $(BUILD_DIR)
+PDF_BUILD_DIR  ?= $(BUILD_DIR)
+ODT_BUILD_DIR  ?= $(BUILD_DIR)
+RTF_BUILD_DIR  ?= $(ODT_BUILD_DIR)
+DOC_BUILD_DIR  ?= $(ODT_BUILD_DIR)
 DOCX_BUILD_DIR ?= $(ODT_BUILD_DIR)
 EPUB_BUILD_DIR ?= $(BUILD_DIR)
 MOBI_BUILD_DIR ?= $(EPUB_BUILD_DIR)
-JPG_BUILD_DIR ?= $(BUILD_DIR)
+JPG_BUILD_DIR  ?= $(BUILD_DIR)
 HTML_BUILD_DIR ?= $(BUILD_DIR)
-TEMP_DIR      ?= build/tmp
+TEMP_DIR       ?= build/tmp
 
 # Programs
 KINDLEGEN   = /opt/kindlegen/kindlegen
@@ -35,7 +36,8 @@ XELATEX     ?= xelatex
 COVER_STYLE    ?= plain
 EPUB_STYLE     ?= plain
 HTML_STYLE     ?= plain
-ODT_STYLE      ?= $(STYLE_DIR)/odt/plain
+#ODT_STYLE      ?= $(STYLE_DIR)/odt/plain
+ODT_STYLE      ?= /usr/share/xml/docbook/stylesheet/docbook-xsl-ns/odf/docbook.xsl
 PDF_STYLE      ?= plain
 
 EPUB_STYLE_DIR ?= $(STYLE_DIR)/epub/$(EPUB_STYLE)
@@ -105,7 +107,7 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 	mv $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(TEMP_DIR)/$*.xml
 
 	# Remove the gather directory.
-	rm -rf $(TEMP_DIR)/$*-gather
+	#rm -rf $(TEMP_DIR)/$*-gather
 
 $(TEMP_DIR)/%.xml: $(TEMP_DIR)/%/index.xml
 	cp $(TEMP_DIR)/$*/index.xml $(TEMP_DIR)/$*.xml
@@ -118,7 +120,8 @@ $(XML_BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml
 # ODT
 #
 
-$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml
+$(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml $(JPG_BUILD_DIR)/%.jpg
+	cp $(JPG_BUILD_DIR)/$*.jpg $(XML_BUILD_DIR)/$(dir $*)/cover.jpg
 	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
 	mkdir -p $(ODT_BUILD_DIR)/$(dir $*)
@@ -244,9 +247,9 @@ $(TEMP_DIR)/%-epub/toc.ncx: $(EPUB_STYLE_DIR)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(T
 	mfgames-ncx meta-set $(TEMP_DIR)/$*-epub/toc.ncx dtb:uid \
 		$(shell mfgames-opf uid-get $(TEMP_DIR)/$*-epub/content.opf)
 
-$(JPG_BUILD_DIR)/%.jpg: $(SOURCE_DIR)/%.jpg
+$(JPG_BUILD_DIR)/%.jpg: $(JPG_SOURCE_DIR)/%.jpg
 	mkdir -p $(JPG_BUILD_DIR)/$(dir $*)
-	cp $(SOURCE_DIR)/$*.jpg $(JPG_BUILD_DIR)/$*.jpg
+	cp $(JPG_SOURCE_DIR)/$*.jpg $(JPG_BUILD_DIR)/$*.jpg
 
 $(JPG_BUILD_DIR)/%.jpg: $(XML_BUILD_DIR)/%.xml $(STYLE_DIR)/cover/$(COVER_STYLE).xsl
 #	# We have to create a cover using `fop`.
