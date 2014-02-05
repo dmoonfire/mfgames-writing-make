@@ -63,7 +63,7 @@
 
 \renewcommand*{\cftchapterfont}{\scriptsize}
 \renewcommand*{\cftchapterpagefont}{\scriptsize}
-\renewcommand*{\cftchaptername}{Chapter2 }
+\renewcommand*{\cftchaptername}{Chapter }
 \renewcommand{\cftchapteraftersnum}{:}
 \setlength{\cftbeforechapterskip}{0pt}
     </xsl:text>
