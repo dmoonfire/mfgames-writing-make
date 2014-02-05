@@ -18,6 +18,7 @@ JPG_SOURCE_DIR ?= $(SOURCE_DIR)
 BUILD_DIR      ?= build
 XML_BUILD_DIR  ?= $(BUILD_DIR)
 PDF_BUILD_DIR  ?= $(BUILD_DIR)
+PDF_EXTRAS_DIR ?= $(SOURCE_DIR)/extras
 ODT_BUILD_DIR  ?= $(BUILD_DIR)
 RTF_BUILD_DIR  ?= $(ODT_BUILD_DIR)
 DOC_BUILD_DIR  ?= $(ODT_BUILD_DIR)
@@ -27,6 +28,8 @@ MOBI_BUILD_DIR ?= $(EPUB_BUILD_DIR)
 JPG_BUILD_DIR  ?= $(BUILD_DIR)
 HTML_BUILD_DIR ?= $(BUILD_DIR)
 TEMP_DIR       ?= build/tmp
+
+PDF_STYLE_DIR  ?= $(PDF_STYLE_DIR)
 
 # Programs
 KINDLEGEN   = /opt/kindlegen/kindlegen
@@ -161,7 +164,12 @@ $(DOCX_BUILD_DIR)/%.docx: $(ODT_BUILD_DIR)/%.odt
 $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$(dir $*)
 
-	saxonb-xslt -xsl:$(STYLE_DIR)/tex/$(PDF_STYLE).xsl -s:$(XML_BUILD_DIR)/$*.xml -o:$(TEMP_DIR)/$*.tex
+	# Escape some additional LaTeX elements.
+	cat $(XML_BUILD_DIR)/$*.xml \
+		| sed 's@%@\\%@g' \
+		> $(TEMP_DIR)/$*.tex.xml
+
+	saxonb-xslt -xsl:$(PDF_STYLE_DIR)/$(PDF_STYLE).xsl -s:$(TEMP_DIR)/$*.tex.xml -o:$(TEMP_DIR)/$*.tex
 
 	# Escape the generated LaTeX.
 #		sed 's@#@\\#@g' |
@@ -178,9 +186,9 @@ $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
 
 	# Copy any additional assets from the source file.
-	if [ -d $(STYLE_DIR)/tex/$(PDF_STYLE) ]; \
+	if [ -d $(PDF_EXTRAS_DIR) ]; \
 	then \
-		cp $(STYLE_DIR)/tex/$(PDF_STYLE)/* $(TEMP_DIR)/$(dir $*); \
+		cp $(PDF_EXTRAS_DIR)/* $(TEMP_DIR)/$(dir $*); \
 	fi
 
 $(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
