@@ -12,7 +12,7 @@
 
   <xsl:template match="d:*" mode="pagestyle.header.odd.center">
     <xsl:text>{\scriptsize </xsl:text>
-    <xsl:apply-templates select="d:info/d:title"/>
+	<xsl:text>\leftmark</xsl:text>
     <xsl:text>}</xsl:text>
   </xsl:template>
 
@@ -26,7 +26,9 @@
 
   <xsl:template match="d:*" mode="pagestyle.header.even.center">
     <xsl:text>{\scriptsize </xsl:text>
-    <xsl:apply-templates select="d:info/d:title"/>
+	<xsl:variable name="smallcase" select="'abcdefghijklmnopqrstuvwxyz'" />
+	<xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
+	<xsl:value-of select="translate(d:info/d:title, $smallcase, $uppercase)" />
     <xsl:text>}</xsl:text>
   </xsl:template>
 
