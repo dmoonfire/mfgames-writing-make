@@ -96,7 +96,11 @@
       Back Matter
   -->
   <xsl:template match="d:book" mode="backmatter">
-	<xsl:apply-templates select="d:appendix"/>
+	<xsl:if test="d:appendix">
+	  <xsl:text>\appendix</xsl:text>
+	  <xsl:call-template name="newline"/>
+	  <xsl:apply-templates select="d:appendix"/>
+	</xsl:if>
 
     <xsl:if test="d:colophon">
       <xsl:text>\backmatter</xsl:text>
@@ -106,8 +110,6 @@
   </xsl:template>
 
   <xsl:template match="d:appendix">
-	<xsl:text>\appendix </xsl:text>
-
     <xsl:text>\chapter{</xsl:text>
     <xsl:call-template name="insert-title"/>
     <xsl:text>}</xsl:text>

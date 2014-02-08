@@ -52,7 +52,7 @@
 \parbox{\textwidth}{\chaptitlefont \strut bg\\bg\strut}}
 \renewcommand\printchaptertitle[1]{%
 \parbox[t][\chaptertitleboxheight][t]{\textwidth}{%
-\microtypesetup{protrusion=false}% add this if you use microtype
+%\microtypesetup{protrusion=false}% add this if you use microtype
 \chaptitlefont\strut ##1\strut}%
 }
 }
