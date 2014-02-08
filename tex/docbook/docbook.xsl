@@ -75,7 +75,9 @@
     <xsl:text>\usepackage{lettrine}</xsl:text>
     <xsl:text>\usepackage{fontspec}</xsl:text>
     <xsl:text>\usepackage{graphicx}</xsl:text>
+    <xsl:text>\usepackage{xcolor}</xsl:text>
     <xsl:text>\usepackage{microtype}</xsl:text>
+    <xsl:text>\usepackage{calc}</xsl:text>
     <xsl:text>\usepackage</xsl:text><xsl:value-of select="$package.titlesec.options"/><xsl:text>{titlesec}</xsl:text>
 	<xsl:call-template name="additional-usepackage"/>
 
