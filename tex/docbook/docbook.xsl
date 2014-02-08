@@ -46,6 +46,9 @@
   <xsl:variable name="margin.bottom">1in</xsl:variable>
   <xsl:variable name="margin.inner">1in</xsl:variable>
   <xsl:variable name="margin.outer">1in</xsl:variable>
+  <xsl:variable name="text.indent">0.5in</xsl:variable>
+
+  <!-- Additional packages -->
 
   <xsl:template name="additional-usepackage"/>
 
@@ -77,6 +80,7 @@
 	<xsl:call-template name="additional-usepackage"/>
 
 	<!-- Set up the document sizes -->
+    <xsl:apply-templates select="." mode="setup-page-size"/>
     <xsl:apply-templates select="." mode="setup"/>
 
     <!-- Set up the fonts for the document -->
@@ -117,7 +121,10 @@
 \setlength{\epigraphrule}{0pt}
 \epigraphposition{center}
 \epigraphtextposition{raggedright}
-\epigraphsourceposition{raggedleft}</xsl:text>
+\epigraphsourceposition{raggedleft}
+
+%% Set the text indent.
+\setlength{\parindent}{</xsl:text><xsl:value-of select="$text.indent"/><xsl:text>}</xsl:text>
 
     <xsl:apply-templates select="." mode="pagestyle"/>
 
@@ -141,6 +148,8 @@
     <!-- Begin the document. -->
     <xsl:text>\begin{document}</xsl:text>
     <xsl:call-template name="newline"/>
+    <xsl:text>\sloppy</xsl:text>
+    <xsl:call-template name="newline"/>
 
     <!-- Add in the various elements using multiple passes. -->
     <xsl:apply-templates select="." mode="title"/>
@@ -151,6 +160,10 @@
     <!-- Finish up the document. -->
     <xsl:text>\end{document}</xsl:text>
     <xsl:call-template name="newline"/>
+  </xsl:template>
+
+  <xsl:template match="d:*" mode="setup-page-size" priority="-1">
+	<!-- We default to not specifying a page size. -->
   </xsl:template>
 
   <xsl:template match="d:info" />
