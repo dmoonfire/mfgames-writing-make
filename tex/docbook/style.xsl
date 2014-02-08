@@ -46,6 +46,38 @@
     <xsl:apply-templates select="." mode="pagestyle.footer.odd.right"/>
     <xsl:text>}</xsl:text>
 
+    <xsl:text>\makeevenhead{plain}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.even.left"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.even.center"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.even.right"/>
+    <xsl:text>}</xsl:text>
+
+    <xsl:text>\makeoddhead{plain}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.odd.left"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.odd.center"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.header.odd.right"/>
+    <xsl:text>}</xsl:text>
+
+    <xsl:text>\makeevenfoot{plain}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.even.left"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.even.center"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.even.right"/>
+    <xsl:text>}</xsl:text>
+
+    <xsl:text>\makeoddfoot{plain}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.odd.left"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.odd.center"/>
+    <xsl:text>}{</xsl:text>
+    <xsl:apply-templates select="." mode="pagestyle.plain.footer.odd.right"/>
+    <xsl:text>}</xsl:text>
+
     <xsl:text>\pagestyle{custompage}</xsl:text>
   </xsl:template>
 
