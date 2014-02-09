@@ -169,6 +169,7 @@
   </xsl:template>
 
   <xsl:template match="d:info" />
+  <xsl:template match="d:title" />
 
   <xsl:template match="d:author">
     <xsl:value-of select="d:firstname"/>
@@ -266,7 +267,7 @@
 
   <!-- Formatting -->
   <xsl:template name="insert-title">
-    <xsl:value-of select="d:info/d:title"/>
+    <xsl:value-of select="d:title|d:info/d:title"/>
   </xsl:template>
 
   <xsl:template name="newline">

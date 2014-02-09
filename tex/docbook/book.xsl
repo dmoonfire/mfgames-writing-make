@@ -116,4 +116,13 @@
 
 	<xsl:apply-templates/>
   </xsl:template>
+
+  <xsl:template match="d:section">
+	<!-- We use section* to avoid numbering. -->
+    <xsl:text>\section*{</xsl:text>
+    <xsl:call-template name="insert-title"/>
+    <xsl:text>}</xsl:text>
+
+	<xsl:apply-templates/>
+  </xsl:template>
 </xsl:stylesheet>
