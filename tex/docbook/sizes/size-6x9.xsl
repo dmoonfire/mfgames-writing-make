@@ -16,7 +16,7 @@
 \settrims{0in}{0in}
 \setlrmarginsandblock{0.7in}{0.5in}{*}
 \setulmarginsandblock{1in}{0.7in}{*}
-\setheadfoot{12pt}{12pt}
+\setheadfoot{15pt}{15pt}
 \setlength\headsep{12pt}
 \checkandfixthelayout
 	</xsl:text>

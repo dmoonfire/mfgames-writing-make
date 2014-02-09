@@ -8,14 +8,33 @@
     <xsl:text>\clearpage </xsl:text>
     <xsl:apply-templates/>
 	<xsl:apply-templates select="../d:copyright"/>
+	<xsl:apply-templates select="../d:publisher"/>
+	<xsl:apply-templates select="../d:bibliod[class='isbn']"/>
   </xsl:template>
 
   <xsl:template match="d:copyright">
 	<xsl:text>\begin{center}</xsl:text>
 	<xsl:text>Copyright &#169; </xsl:text>
-	<xsl:value-of select="d:year"/>
+	<xsl:apply-templates select="d:year"/>
 	<xsl:text> </xsl:text>
 	<xsl:value-of select="d:holder"/>
+	<xsl:text>\end{center}</xsl:text>
+  </xsl:template>
+ 
+  <xsl:template match="d:year">
+	<xsl:apply-templates/><xsl:text>, </xsl:text>
+  </xsl:template>
+
+  <xsl:template match="d:publisher">
+	<xsl:text>\begin{center}</xsl:text>
+	<xsl:value-of select="d:publishername"/>
+	<xsl:text>\end{center}</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="d:biblioid">
+	<xsl:text>\begin{center}</xsl:text>
+	<xsl:text>ISBN: </xsl:text>
+	<xsl:apply-templates/>
 	<xsl:text>\end{center}</xsl:text>
   </xsl:template>
 </xsl:stylesheet>
