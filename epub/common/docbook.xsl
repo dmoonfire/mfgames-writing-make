@@ -260,9 +260,9 @@
 
   <!-- Anchors -->
   <xsl:template name="insert-anchor">
-	<xsl:if test="@id">
+	<xsl:if test="@xml:id">
 	  <xsl:attribute name="id">
-		<xsl:value-of select="@id"/>
+		<xsl:value-of select="@xml:id"/>
 	  </xsl:attribute>
 	</xsl:if>
   </xsl:template>

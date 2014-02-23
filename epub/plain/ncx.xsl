@@ -47,16 +47,16 @@
 	<!-- Since programmically generating the ID doesn't work across
 	     iterations, we only create an index if there is an ID field
 	     associated with it. -->
-	<xsl:if test="@id">
+	<xsl:if test="@xml:id">
 	  <!-- We don't worry about play order because we'll use
 	       mfgames-ncx to fix that with a reformat. -->
-	  <navPoint id="{@id}" playOrder="0">
+	  <navPoint id="{@xml:id}" playOrder="0">
 		<navLabel>
 		  <text>
 			<xsl:apply-templates select="d:info/d:title"/>
 		  </text>
 		</navLabel>
-		<content src="content.html#{@id}"/>
+		<content src="content.html#{@xml:id}"/>
 	  </navPoint>
 	</xsl:if>
 

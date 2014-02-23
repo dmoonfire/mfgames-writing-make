@@ -62,8 +62,8 @@
 		</xsl:when>
 	  </xsl:choose>
 
-	  <xsl:if test="@id">
-		<a href="content.html#{@id}">
+	  <xsl:if test="@xml:id">
+		<a href="content.html#{@xml:id}">
 		  <xsl:apply-templates select="." mode="insert-number">
 			<xsl:with-param name="index">
 			  <xsl:value-of select="position()"/>
@@ -73,7 +73,7 @@
 		  <xsl:apply-templates select="d:info/d:title"/>
 		</a>
 	  </xsl:if>
-	  <xsl:if test="not(@id)">
+	  <xsl:if test="not(@xml:id)">
 		<xsl:apply-templates select="." mode="insert-number">
 		  <xsl:with-param name="index">
 			<xsl:value-of select="position()"/>
