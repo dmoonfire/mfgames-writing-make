@@ -33,7 +33,7 @@ PDF_STYLE_DIR  ?= $(PDF_STYLE_DIR)
 
 # Programs
 KINDLEGEN   = /opt/kindlegen/kindlegen
-XELATEX     ?= xelatex
+XELATEX     ?= buf_size=2500000 xelatex
 
 # Styles
 COVER_STYLE    ?= plain
@@ -137,16 +137,16 @@ $(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml $(JPG_BUILD_DIR)/%.jpg
 $(RTF_BUILD_DIR)/%.rtf: $(ODT_BUILD_DIR)/%.odt
 	unoconv -f rtf $(ODT_BUILD_DIR)/$*.odt
 	mkdir -p $(RTF_BUILD_DIR)/$(dir $*)
-	mv $(ODT_BUILD_DIR)/$*.rtf $(RTF_BUILD_DIR)/$*.rtf
+	-mv $(ODT_BUILD_DIR)/$*.rtf $(RTF_BUILD_DIR)/$*.rtf
 
 #
 # DOC
 #
 
-$(DOC_BUILD_DIR)/%.doc: $(ODT_BUILD_DIR)/%.odt
-	unoconv -f doc $(ODT_BUILD_DIR)/$*.odt
+$(DOC_BUILD_DIR)/%.doc: $(ODT_BUILD_DIR)/%.rtf
+	unoconv -f doc $(ODT_BUILD_DIR)/$*.rtf
 	mkdir -p $(DOC_BUILD_DIR)/$(dir $*)
-	mv $(ODT_BUILD_DIR)/$*.odt $(DOC_BUILD_DIR)/$*.rtf
+	-mv $(ODT_BUILD_DIR)/$*.doc $(DOC_BUILD_DIR)/$*.doc
 
 #
 # DOCX
@@ -155,7 +155,7 @@ $(DOC_BUILD_DIR)/%.doc: $(ODT_BUILD_DIR)/%.odt
 $(DOCX_BUILD_DIR)/%.docx: $(ODT_BUILD_DIR)/%.odt
 	unoconv -f doc $(ODT_BUILD_DIR)/$*.odt
 	mkdir -p $(DOCX_BUILD_DIR)/$(dir $*)
-	mv $(ODT_BUILD_DIR)/$*.odt $(DOCX_BUILD_DIR)/$*.rtf
+	-mv $(ODT_BUILD_DIR)/$*.docx $(DOCX_BUILD_DIR)/$*.docx
 
 #
 # PDF
