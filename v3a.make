@@ -103,14 +103,14 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 		--exclude-media=cover.jpg \
 		$(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather \
 		--directory-root=$(TEMP_DIR) \
-		--media-destination=$(TEMP_DIR)/$(dir $*) \
+		--media-destination=$(realpath $(TEMP_DIR)/$(dir $*)) \
 		--media-search $(TEMP_DIR) $(SOURCE_DIR)
 
 	# Put it back in place of the file.
-	mv $(TEMP_DIR)/$*-gather/$(notdir $*).xml $(TEMP_DIR)/$*.xml
+	mv $(TEMP_DIR)/$*-gather/* $(TEMP_DIR)/
 
 	# Remove the gather directory.
-	#rm -rf $(TEMP_DIR)/$*-gather
+	rm -rf $(TEMP_DIR)/$*-gather
 
 $(TEMP_DIR)/%.xml: $(TEMP_DIR)/%/index.xml
 	cp $(TEMP_DIR)/$*/index.xml $(TEMP_DIR)/$*.xml
@@ -240,7 +240,19 @@ $(TEMP_DIR)/%-epub/content.opf: $(EPUB_STYLE_DIR)/opf.xsl $(XML_BUILD_DIR)/%.xml
 	mfgames-opf uid-generate $(TEMP_DIR)/$*-epub/content.opf
 
 	# Add in the various references.
-	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg);do if [ ! -f $(TEMP_DIR)/$*-epub/$$file ];then cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file;fi;mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf $$file $$file $$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b);done
+	for file in $(shell mfgames-docbook depends $(XML_BUILD_DIR)/$*.xml | grep -v cover.jpg); do \
+		if [ ! -f $(TEMP_DIR)/$*-epub/$$file ]; then \
+			if [ -f $(SOURCE_DIR)/$(dir $*)/$$file ]; then \
+				cp $(SOURCE_DIR)/$(dir $*)/$$file $(TEMP_DIR)/$*-epub/$$file; \
+			fi; \
+			if [ -f $(TEMP_DIR)/$$file ]; then \
+				cp $(TEMP_DIR)/$$file $(TEMP_DIR)/$*-epub/$$file; \
+			fi; \
+		fi;\
+		mfgames-opf manifest-set $(TEMP_DIR)/$*-epub/content.opf \
+			dep-$$(echo $$file | sed 's/\..*$$//g') $$file \
+			$$(echo "mimetype -b $(TEMP_DIR)/$*-epub/$$file" | xargs mimetype -b); \
+	done
 
 $(TEMP_DIR)/%-epub/toc.ncx: $(EPUB_STYLE_DIR)/ncx.xsl $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.opf
 	# Create the NCX file which has placeholders for the sequence.
@@ -356,3 +368,4 @@ $(HTML_BUILD_DIR)/%.html: $(XML_BUILD_DIR)/%.xml
 #
 
 .PRECIOUS: $(JPG_BUILD_DIR)/%.jpg $(MOBI_BUILD_DIR)/%.mobi $(EPUB_BUILD_DIR)/%.epub $(PDF_BUILD_DIR)/%.pdf $(ODT_BUILD_DIR)/%.odt $(DOC_BUILD_DIR)/%.doc
+
