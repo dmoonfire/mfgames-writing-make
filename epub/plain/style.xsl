@@ -82,36 +82,42 @@ body {
   margin: 0;
   padding: 0;
   text-indent: 1.25em;
+  text-align: left;
 }
 
 .indent, .indent1 {
   margin: 0 0 0 2em;
   padding: 0;
   text-indent: 0;
+  text-align: left;
 }
 
 .indent2 {
   margin: 0 0 0 4em;
   padding: 0;
   text-indent: 0;
+  text-align: left;
 }
 
 .indent3 {
   margin: 0 0 0 6em;
   padding: 0;
   text-indent: 0;
+  text-align: left;
 }
 
 .noindent {
   text-indent: 0;
   padding: 0;
   margin: 0;
+  text-align: left;
 }
 
 .slab {
   text-indent: 0;
   padding: 0;
   margin: 1em 0 0 0;
+  text-align: left;
 }
 
 .blockquote {
@@ -122,12 +128,14 @@ div.blockquoted {
   margin: 0 0 0 2em;
   padding: 0;
   text-indent: 1.25em;
+  text-align: left;
 }
 
 div.blockquotedslab {
   text-indent: 0;
   padding: 0;
   margin: 1em 0 0 2em;
+  text-align: left;
 }
 
 .left {

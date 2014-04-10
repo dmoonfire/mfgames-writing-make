@@ -24,4 +24,15 @@
 	<xsl:value-of select="@xlink:href"/>
 	<xsl:text>]</xsl:text>
   </xsl:template>
+
+  <xsl:template match="d:quote[@role='single']">
+    <xsl:text>&#x2018;</xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>&#x2019;</xsl:text>
+  </xsl:template>
+  <xsl:template match="d:quote" priority="-1">
+    <xsl:text>&#8220;</xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>&#8221;</xsl:text>
+  </xsl:template>
 </xsl:stylesheet>

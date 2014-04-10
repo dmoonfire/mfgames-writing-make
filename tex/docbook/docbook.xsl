@@ -26,6 +26,7 @@
   <xsl:import href="article.xsl"/>
   <xsl:import href="legalnotice.xsl"/>
   <xsl:import href="inline.xsl"/>
+  <xsl:import href="media.xsl"/>
 
   <!-- TeX files are text files. -->
   <xsl:output method="text" />
@@ -250,18 +251,6 @@
     <xsl:value-of select="d:attribution"/>
     <xsl:text>}}</xsl:text>
     <xsl:call-template name="newline"/>
-  </xsl:template>
-
-  <!-- Inlines -->
-  <xsl:template match="d:quote[@role='single']">
-    <xsl:text>&#x2018;</xsl:text>
-    <xsl:apply-templates/>
-    <xsl:text>&#x2019;</xsl:text>
-  </xsl:template>
-  <xsl:template match="d:quote" priority="-1">
-    <xsl:text>&#8220;</xsl:text>
-    <xsl:apply-templates/>
-    <xsl:text>&#8221;</xsl:text>
   </xsl:template>
 
   <!-- Address -->

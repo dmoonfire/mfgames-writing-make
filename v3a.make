@@ -124,11 +124,12 @@ $(XML_BUILD_DIR)/%.xml: $(TEMP_DIR)/%.xml
 #
 
 $(ODT_BUILD_DIR)/%.odt: $(XML_BUILD_DIR)/%.xml $(JPG_BUILD_DIR)/%.jpg
-	cp $(JPG_BUILD_DIR)/$*.jpg $(XML_BUILD_DIR)/$(dir $*)/cover.jpg
-	cd $(XML_BUILD_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
+	cp $(XML_BUILD_DIR)/$*.xml $(TEMP_DIR)/$(notdir $*).xml
+	cp $(JPG_BUILD_DIR)/$*.jpg $(TEMP_DIR)/$(dir $*)/cover.jpg
+	cd $(TEMP_DIR)/$(dir $*) && docbook2odf $(notdir $*).xml --xsl-file=$(ODT_STYLE) --params quote.fancy=1 -f -o $(notdir $*).odt
 
 	mkdir -p $(ODT_BUILD_DIR)/$(dir $*)
-	-mv $(XML_BUILD_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
+	-mv $(TEMP_DIR)/$*.odt $(ODT_BUILD_DIR)/$*.odt
 
 #
 # RTF
