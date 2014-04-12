@@ -53,7 +53,7 @@ CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backti
 # Top-Level Rules
 #
 
-all:
+top:
 
 clean:
 	rm -fr $(PDF_BUILD_DIR) $(XML_BUILD_DIR) $(BUILD_DIR) $(TEMP_DIR)

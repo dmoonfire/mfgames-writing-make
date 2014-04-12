@@ -25,9 +25,8 @@
 		  <xsl:apply-templates select="*/d:info/d:title"/>
 		</dc:title>
 		<dc:language>en</dc:language>
-		<dc:creator>
-		  <xsl:apply-templates select="*/d:info/d:author" />
-		</dc:creator>
+		<xsl:apply-templates select="*/d:info/d:author/d:personname" mode="dc"/>
+		<xsl:apply-templates select="*/d:info/d:publisher" mode="dc"/>
 		<xsl:apply-templates select="*/d:info/d:biblioid[@class='uri']"/>
 
 		<meta name="cover" content="cover"/>
@@ -91,12 +90,20 @@
 	<xsl:apply-templates/>
   </xsl:template>
 
-  <xsl:template match="d:author">
-	<xsl:if test="d:firstname">
-	  <xsl:value-of select="d:firstname"/>
-	  <xsl:text> </xsl:text>
-	</xsl:if>
+  <xsl:template match="d:personname" mode="dc">
+	<dc:creator>
+	  <xsl:if test="d:firstname">
+		<xsl:value-of select="d:firstname"/>
+		<xsl:text> </xsl:text>
+	  </xsl:if>
+	  
+	  <xsl:value-of select="d:surname"/>
+	</dc:creator>
+  </xsl:template>
 
-	<xsl:value-of select="d:surname"/>
+  <xsl:template match="d:publisher" mode="dc">
+	<dc:publisher>
+	  <xsl:value-of select="d:publishername"/>
+	</dc:publisher>
   </xsl:template>
 </xsl:stylesheet>
