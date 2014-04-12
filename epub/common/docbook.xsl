@@ -50,6 +50,11 @@
   <xsl:template match="d:book">
 	<!-- Main Matter -->
 	<xsl:apply-templates select="d:info" mode="title"/>
+
+	<xsl:apply-templates select="d:info/d:abstract" mode="abstract">
+	  <xsl:with-param name="depth">1</xsl:with-param>
+	</xsl:apply-templates>
+
 	<div id="start"/>
 	
 	<xsl:apply-templates select="d:preface">
@@ -75,6 +80,22 @@
 	<xsl:call-template name="insert-body-contents">
 	  <xsl:with-param name="depth">2</xsl:with-param>
 	</xsl:call-template>
+  </xsl:template>
+
+  <!-- Abstract -->
+  <xsl:template match="d:abstract" mode="abstract">
+	<xsl:param name="depth"/>
+
+	<!-- Give the section a heading title based on the level. -->
+	<xsl:element name="h{$depth}">
+	  <xsl:call-template name="insert-anchor"/>
+	  <xsl:attribute name="class">page</xsl:attribute>
+	  <xsl:attribute name="id">description</xsl:attribute>
+	  <xsl:text>Description</xsl:text>
+	</xsl:element>
+
+	<!-- Insert the description -->
+	<xsl:apply-templates select="d:para|d:simpara"/>
   </xsl:template>
 
   <!-- Legal Notices -->
