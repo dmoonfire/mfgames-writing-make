@@ -6,9 +6,11 @@
 	xmlns:mfw="urn:mfgames:writing:docbook,0"
     version="2.0">
   <!-- Includes various other components -->
-  <xsl:include href="../common/inline.xsl"/>
-  <xsl:include href="../common/blocks.xsl"/>
-  <xsl:include href="../common/lists.xsl"/>
+  <xsl:include href="inline.xsl"/>
+  <xsl:include href="blocks.xsl"/>
+  <xsl:include href="lists.xsl"/>
+  <xsl:include href="toc.xsl"/>
+  <xsl:include href="media.xsl"/>
 
   <xsl:template match="/">
 	<html>
@@ -49,9 +51,12 @@
 
   <xsl:template match="d:book">
 	<!-- Main Matter -->
-	<xsl:apply-templates select="d:info" mode="title"/>
+	<!--<xsl:apply-templates select="d:info" mode="title"/>-->
 
 	<xsl:apply-templates select="d:info/d:abstract" mode="abstract">
+	  <xsl:with-param name="depth">1</xsl:with-param>
+	</xsl:apply-templates>
+	<xsl:apply-templates select="." mode="toc">
 	  <xsl:with-param name="depth">1</xsl:with-param>
 	</xsl:apply-templates>
 
@@ -103,20 +108,25 @@
 	<!-- Add in the link for legal -->
 	<div class='page' id="legal"/>
 
-	<!-- Add in the copyright. -->
-	<xsl:apply-templates select="d:copyright"/>
-
 	<!-- Include the contents of the notice. -->
 	<xsl:apply-templates select="d:legalnotice/d:para|d:legalnotice/d:simpara"/>
+
+	<!-- Add in the copyright and publisher. -->
+	<xsl:apply-templates select="d:copyright"/>
+	<xsl:apply-templates select="d:publisher"/>
   </xsl:template>
 
   <xsl:template match="d:copyright">
-	<p>
+	<p class="center">
 	  <xsl:text>Copyright &#169; </xsl:text>
 	  <xsl:value-of select="d:year"/>
 	  <xsl:text> </xsl:text>
 	  <xsl:value-of select="d:holder"/>
 	</p>
+  </xsl:template>
+
+  <xsl:template match="d:publisher">
+	<p class="center"><xsl:apply-templates /></p>
   </xsl:template>
 
   <!-- Dedication -->

@@ -215,12 +215,12 @@ $(TEMP_DIR)/%-epub/content.html: $(EPUB_STYLE_DIR)/content.xsl $(XML_BUILD_DIR)/
 		-s:$(XML_BUILD_DIR)/$*.xml \
 		-o:$(TEMP_DIR)/$*-epub/content.html
 
-$(TEMP_DIR)/%-epub/toc.html: $(EPUB_STYLE_DIR)/toc.xsl $(XML_BUILD_DIR)/%.xml
-	mkdir -p $(TEMP_DIR)/$*-epub
-	saxonb-xslt \
-		-xsl:$(EPUB_STYLE_DIR)/toc.xsl \
-		-s:$(XML_BUILD_DIR)/$*.xml \
-		-o:$(TEMP_DIR)/$*-epub/toc.html
+#$(TEMP_DIR)/%-epub/toc.html: $(EPUB_STYLE_DIR)/toc.xsl $(XML_BUILD_DIR)/%.xml
+#	mkdir -p $(TEMP_DIR)/$*-epub
+#	saxonb-xslt \
+#		-xsl:$(EPUB_STYLE_DIR)/toc.xsl \
+#		-s:$(XML_BUILD_DIR)/$*.xml \
+#		-o:$(TEMP_DIR)/$*-epub/toc.html
 
 $(TEMP_DIR)/%-epub/cover.html: $(EPUB_STYLE_DIR)/cover.xsl $(XML_BUILD_DIR)/%.xml
 	mkdir -p $(TEMP_DIR)/$*-epub
@@ -293,7 +293,8 @@ $(TEMP_DIR)/%-epub/cover.jpg: $(JPG_BUILD_DIR)/%.jpg
 	mkdir -p $(TEMP_DIR)/$*-epub
 	cp $(JPG_BUILD_DIR)/$*.jpg $(TEMP_DIR)/$*-epub/cover.jpg
 
-$(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
+$(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
+# $(TEMP_DIR)/%-epub/toc.html
 	# Remove any existing epub file, because we have to rebuild it.
 	rm -f $(TEMP_DIR)/$*.epub
 

@@ -36,9 +36,6 @@
 		<item href="content.html"
 			  id="content"
 			  media-type="application/xhtml+xml"/>
-		<item href="toc.html"
-			  id="htmltoc" 
-			  media-type="application/xhtml+xml"/>
 		<item href="toc.ncx"
 			  id="ncxtoc" 
 			  media-type="application/x-dtbncx+xml"/>
@@ -54,7 +51,6 @@
 	  <spine toc="ncxtoc">
         <itemref idref="cover"/>
         <itemref idref="content"/>
-        <itemref idref="htmltoc" linear="no"/>
 	  </spine>
 	  <guide>
         <reference type="start"
@@ -62,7 +58,7 @@
 				   href="content.html#start"/>
         <reference type="toc" 
 				   title="Table of Contents" 
-				   href="toc.html"/>
+				   href="content.html#toc"/>
 	  </guide>
 	</package>
   </xsl:template>

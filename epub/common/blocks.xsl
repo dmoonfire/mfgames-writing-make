@@ -8,7 +8,7 @@
   <xsl:template name="insert-body-contents">
 	<xsl:param name="depth"/>
 
-	<xsl:apply-templates select="d:para|d:simpara|d:blockquote|d:itemizedlist|d:bridgehead|d:poetry"/>
+	<xsl:apply-templates select="d:para|d:simpara|d:blockquote|d:itemizedlist|d:bridgehead|d:poetry|d:mediaobject"/>
 	
 	<xsl:apply-templates select="d:chapter|d:article|d:section">
 	  <xsl:with-param name='depth'>
