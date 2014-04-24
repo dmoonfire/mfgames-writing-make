@@ -296,11 +296,14 @@ $(TEMP_DIR)/%-epub/cover.jpg: $(JPG_BUILD_DIR)/%.jpg
 $(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
 # $(TEMP_DIR)/%-epub/toc.html
 	# Remove any existing epub file, because we have to rebuild it.
-	rm -f $(TEMP_DIR)/$*.epub $(TEMP_DIR)/$*-epub-zip
+	rm -rf $(TEMP_DIR)/$*.epub $(TEMP_DIR)/$*-epub-zip
 
 	# Copy the supporting files into the directory.
 	mkdir $(TEMP_DIR)/$*-epub-zip
 	cp $(TEMP_DIR)/$*-epub/* $(TEMP_DIR)/$*-epub-zip
+
+	# Split the content file into separate files per heading.
+	$(dir $(lastword $(MAKEFILE_LIST)))split-epub-content-html $(TEMP_DIR)/$*-epub-zip
 
 	# Create the mimetype file.
 	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub-zip/mimetype

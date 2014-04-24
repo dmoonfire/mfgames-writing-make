@@ -1,0 +1,217 @@
+#!/usr/bin/perl
+
+# A post-processor that takes the various elements of an EPUB and
+# splits them into one chapter per document setting up the various
+# table of contents and elements as it processes.
+
+#
+# Setup
+#
+
+# Directives
+use strict;
+use warnings;
+
+#
+# Arguments
+#
+
+my $dir = $ARGV[0];
+
+#
+# Load in the content.html file into memory.
+#
+
+# Slurp the entire content.html into memory.
+$/ = undef;
+open INPUT, "<$dir/content.html" or die "Cannot open content.html ($!)";
+my $content = <INPUT>;
+close INPUT;
+
+# Pull out the contents before the first heading.
+die "Cannot parse content.html"
+	unless $content =~ s@^(.*?<body>)(.*?)((<h1 class="page" id|<div class="page" id="legal"/>).*)</body>(.*)$@$1$2</body>$5@sg;
+my $front_content = $1;
+my $inner_content = $3;
+print STDERR "Parsed content.html\n";
+
+# Fake the special <div tags with H1.
+$inner_content =~ s@(<div class=".*?" id=".*?"/?>)@<h1 ignore>$1@sg;
+
+# Split on the "<h1" where the first will always be blank.
+my @page_contents = split(/<h1 /, $inner_content);
+print STDERR "Found " . scalar(@page_contents) . " pages\n";
+
+# Write out the new content file.
+open OUTPUT, ">$dir/content.html" or die "Cannot write content.html ($!)";
+print OUTPUT $content;
+close OUTPUT;
+#print STDERR "Wrote out remaining content.html\n";
+
+#
+# Chapters
+#
+
+# First go through and figure out the pages and put them into
+# variables.
+my $count = 0;
+my @pages = ();
+my %ids = ();
+
+foreach my $page_content_fragment (@page_contents)
+{
+	# Ignore blanks.
+	next if $page_content_fragment =~ /^\s*$/;
+
+	# Fix the missing <h1> from the split.
+	my $page_content = "<h1 " . $page_content_fragment;
+	$page_content =~ s@<h1 ignore>@@sg;
+
+	# Create a temporary item.
+	my %page = ();
+
+	# Figure out the filename.
+	my $basename = sprintf("page-%03d", $count);
+	my $filename = $basename . ".html";
+	$count++;
+	$page{basename} = $basename;
+	$page{filename} = $filename;
+
+	#print STDERR "Parsing $basename\n";
+
+	# Figure out if we have an ID for this H1.
+	$page{id} = undef;
+	my $title = "";
+
+	if ($page_content =~ m@^<h1([^>]+)>(.*?)</h1>@)
+	{
+		my $attr = $1;
+		$title = $2;
+		$title =~ s@<br/>@: @sg;
+		
+		if ($attr =~ m@id="(.*?)"@)
+		{
+			my $id = $1;
+			$page{id} = $id;
+			$ids{"content.html#$id"} = "$filename#$id";
+			#print STDERR "  Using id $id\n";
+		}
+	}
+		
+	if ($page_content =~ m@^<div([^>]+)>@)
+	{
+		my $attr = $1;
+		
+		if ($attr =~ m@id="(.*?)"@)
+		{
+			my $id = $1;
+			$page{id} = $id;
+			$ids{"content.html#$id"} = "$filename#$id";
+			#print STDERR "  Using id $id\n";
+		}
+	}
+		
+	# Look for the start id.
+	if ($page_content =~ m@ id="start"@)
+	{
+		$ids{"content.html#start"} = "$filename#start";
+	}
+
+	# Figure out the new contents.
+	my $chapter_front = $front_content;
+	$chapter_front =~ s@<title>.*?</title>@<title>$title</title>@sg;
+	$page{front} = $chapter_front;
+	$page{content} = $page_content;
+
+	# Add the page to the list.
+	push @pages, \%page;
+}
+
+#
+# Fix the ID references.
+#
+
+foreach my $page (@pages)
+{
+	foreach my $search (keys %ids)
+	{
+		my $replace = $ids{$search};
+		$$page{content} =~ s@$search@$replace@sg;
+	}
+}
+
+#
+# Write out the individual files.
+#
+
+foreach my $page (@pages)
+{
+	# Pull out the variables.
+	my $basename = $$page{basename};
+	my $filename = $$page{filename};
+	my $front = $$page{front};
+	my $content = $$page{content};
+
+	# Write out the chapter.
+	open OUTPUT, ">$dir/$filename" or die "Cannot write $filename ($!)";
+	print OUTPUT $front;
+	print OUTPUT $content;
+	print OUTPUT "</body></html>";
+	close OUTPUT;
+
+	#print STDERR "Wrote out $filename\n";
+
+	# Add the file to the OPF file.
+	system("mfgames-opf",
+		   "manifest-set",
+		   "$dir/content.opf",
+		   $basename,
+		   $filename,
+		   "application/xhtml+xml");
+	system("mfgames-opf",
+		   "spine-set",
+		   "$dir/content.opf",
+		   $basename);
+}
+
+#
+# Fix the toc.ncx
+#
+
+# Slurp in the file.
+open INPUT, "<$dir/toc.ncx" or die "Cannot open toc.ncx ($!)";
+my $ncx = <INPUT>;
+close INPUT;
+
+# Fix the ID references in the file.
+foreach my $search (keys %ids)
+{
+	my $replace = $ids{$search};
+	$ncx =~ s@$search@$replace@sg;
+}
+
+# Slurp in the file.
+open OUTPUT, ">$dir/toc.ncx" or die "Cannot write toc.ncx ($!)";
+print OUTPUT $ncx;
+close OUTPUT;
+
+#
+# Fix the content.opf
+#
+
+# Slurp in the file.
+open INPUT, "<$dir/content.opf" or die "Cannot open content.opf ($!)";
+my $ncx = <INPUT>;
+close INPUT;
+
+# Fix the ID references in the file.
+foreach my $search (keys %ids)
+{
+	my $replace = $ids{$search};
+	$ncx =~ s@$search@$replace@sg;
+}
+
+# Slurp in the file.
+open OUTPUT, ">$dir/content.opf" or die "Cannot write content.opf ($!)";
+print OUTPUT $ncx;
+close OUTPUT;
