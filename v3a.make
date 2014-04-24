@@ -296,27 +296,31 @@ $(TEMP_DIR)/%-epub/cover.jpg: $(JPG_BUILD_DIR)/%.jpg
 $(TEMP_DIR)/%.epub: $(XML_BUILD_DIR)/%.xml $(TEMP_DIR)/%-epub/content.html $(TEMP_DIR)/%-epub/toc.ncx $(TEMP_DIR)/%-epub/content.opf $(TEMP_DIR)/%-epub/cover.html $(TEMP_DIR)/%-epub/cover.jpg
 # $(TEMP_DIR)/%-epub/toc.html
 	# Remove any existing epub file, because we have to rebuild it.
-	rm -f $(TEMP_DIR)/$*.epub
+	rm -f $(TEMP_DIR)/$*.epub $(TEMP_DIR)/$*-epub-zip
+
+	# Copy the supporting files into the directory.
+	mkdir $(TEMP_DIR)/$*-epub-zip
+	cp $(TEMP_DIR)/$*-epub/* $(TEMP_DIR)/$*-epub-zip
 
 	# Create the mimetype file.
-	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub/mimetype
+	echo -n "application/epub+zip" > $(TEMP_DIR)/$*-epub-zip/mimetype
 
 	# Create the META-INF directory.
-	mkdir -p $(TEMP_DIR)/$*-epub/META-INF
-	echo '<?xml version="1.0"?>' > $(TEMP_DIR)/$*-epub/META-INF/container.xml
-	echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
-	echo '   <rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
-	echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
-	echo '   </rootfiles>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
-	echo '</container>' >> $(TEMP_DIR)/$*-epub/META-INF/container.xml
+	mkdir -p $(TEMP_DIR)/$*-epub-zip/META-INF
+	echo '<?xml version="1.0"?>' > $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
+	echo '<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">' >> $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
+	echo '   <rootfiles>' >> $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
+	echo '      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>' >> $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
+	echo '   </rootfiles>' >> $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
+	echo '</container>' >> $(TEMP_DIR)/$*-epub-zip/META-INF/container.xml
 
 	# Allow the calling class to make additional changes.
-	$(EPUB_EXTRAS) $(TEMP_DIR)/$*-epub/
+	$(EPUB_EXTRAS) $(TEMP_DIR)/$*-epub-zip/
 
 	# Zip all the contents of the file
-	cd $(TEMP_DIR)/$*-epub && zip -X0 epub.zip mimetype
-	cd $(TEMP_DIR)/$*-epub && zip -rDX9 epub.zip * -x mimetype -x epub.zip
-	mv $(TEMP_DIR)/$*-epub/epub.zip $(TEMP_DIR)/$*.epub
+	cd $(TEMP_DIR)/$*-epub-zip && zip -X0 epub.zip mimetype
+	cd $(TEMP_DIR)/$*-epub-zip && zip -rDX9 epub.zip * -x mimetype -x epub.zip
+	mv $(TEMP_DIR)/$*-epub-zip/epub.zip $(TEMP_DIR)/$*.epub
 
 	# Verify that we have a valid epub file.
 	epubcheck $(TEMP_DIR)/$*.epub
