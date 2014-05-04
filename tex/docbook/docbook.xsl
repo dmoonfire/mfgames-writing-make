@@ -254,6 +254,7 @@
   </xsl:template>
 
   <xsl:template match="d:attribution">
+	<xsl:text>— </xsl:text>
 	<xsl:apply-templates/>
   </xsl:template>
 
