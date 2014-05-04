@@ -27,6 +27,7 @@ EPUB_BUILD_DIR ?= $(BUILD_DIR)
 MOBI_BUILD_DIR ?= $(EPUB_BUILD_DIR)
 JPG_BUILD_DIR  ?= $(BUILD_DIR)
 HTML_BUILD_DIR ?= $(BUILD_DIR)
+TEX_BUILD_DIR ?= $(BUILD_DIR)
 TEMP_DIR       ?= build/tmp
 
 PDF_STYLE_DIR  ?= $(PDF_STYLE_DIR)
@@ -180,25 +181,22 @@ $(TEMP_DIR)/%.tex: $(XML_BUILD_DIR)/%.xml
 		sed 's@\^@\\^@g' > $(TEMP_DIR)/$(dir $*)/styled.tex
 	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
 
-	# Convert the -FIRSTPARA- lines into drop capitals using lettrine.
-	perl -n -e \
-		's/-FIRSTPARA-\s*(.)([^\s]*)/\\lettrine{$$1}{$$2}/sg;print' \
-		< $(TEMP_DIR)/$*.tex > $(TEMP_DIR)/$(dir $*)/styled.tex
-	mv $(TEMP_DIR)/$(dir $*)/styled.tex $(TEMP_DIR)/$*.tex
-
 	# Copy any additional assets from the source file.
 	if [ -d $(PDF_EXTRAS_DIR) ]; \
 	then \
 		cp $(PDF_EXTRAS_DIR)/* $(TEMP_DIR)/$(dir $*); \
 	fi
 
-$(TEMP_DIR)/%.pdf: $(TEMP_DIR)/%.tex
-	cd $(TEMP_DIR)/$(dir $*) && \
-		$(XELATEX) -halt-on-error $(notdir $*).tex
-	cd $(TEMP_DIR)/$(dir $*) && \
-		$(XELATEX) -halt-on-error $(notdir $*).tex > /dev/null
-	cd $(TEMP_DIR)/$(dir $*) && \
-		$(XELATEX) -halt-on-error $(notdir $*).tex > /dev/null
+$(TEX_BUILD_DIR)/%.tex: $(TEMP_DIR)/%.tex
+	# Convert the -FIRSTPARA- lines into drop capitals using lettrine.
+	perl -n -e \
+		's/-FIRSTPARA-\s*(.)([^\s]*)/\\lettrine{$$1}{$$2}/sg;print' \
+		< $(TEMP_DIR)/$*.tex > $(TEX_BUILD_DIR)/$*.tex
+
+$(TEMP_DIR)/%.pdf: $(TEX_BUILD_DIR)/%.tex
+	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex
+	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex > /dev/null
+	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex > /dev/null
 
 $(PDF_BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 	mkdir -p $(PDF_BUILD_DIR)/$(dir $*)
