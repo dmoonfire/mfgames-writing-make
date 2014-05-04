@@ -11,6 +11,7 @@
   <xsl:include href="lists.xsl"/>
   <xsl:include href="toc.xsl"/>
   <xsl:include href="media.xsl"/>
+  <xsl:include href="epigraph.xsl"/>
 
   <xsl:template match="/">
 	<html>

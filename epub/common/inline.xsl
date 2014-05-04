@@ -10,7 +10,7 @@
 	<strong><xsl:apply-templates/></strong>
   </xsl:template>
 
-  <xsl:template match="d:emphasis">
+  <xsl:template match="d:emphasis|d:citetitle">
 	<em><xsl:apply-templates/></em>
   </xsl:template>
 

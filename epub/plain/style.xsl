@@ -141,6 +141,10 @@ div.blockquotedslab {
 .left {
   text-align: left;
 }
+
+.right {
+  text-align: right;
+}
 </xsl:text>
 	</style>
   </xsl:template>
