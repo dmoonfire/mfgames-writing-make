@@ -248,9 +248,13 @@
     <xsl:text>\epigraph{\epigraphfont {</xsl:text>
     <xsl:apply-templates select="d:para|d:simpara"/>
     <xsl:text>}}{\epigraphattributionfont {</xsl:text>
-    <xsl:value-of select="d:attribution"/>
+	<xsl:apply-templates select="d:attribution"/>
     <xsl:text>}}</xsl:text>
     <xsl:call-template name="newline"/>
+  </xsl:template>
+
+  <xsl:template match="d:attribution">
+	<xsl:apply-templates/>
   </xsl:template>
 
   <!-- Address -->

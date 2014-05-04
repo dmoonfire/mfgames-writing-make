@@ -11,7 +11,7 @@
     <xsl:text>}</xsl:text>
   </xsl:template>
 
-  <xsl:template match="d:emphasis[not(@role='strong' or @role='bold')]">
+  <xsl:template match="d:emphasis[not(@role='strong' or @role='bold')]|d:citetitle">
     <xsl:text>\emph{</xsl:text>
     <xsl:apply-templates/>
     <xsl:text>}</xsl:text>
