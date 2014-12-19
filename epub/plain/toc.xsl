@@ -90,7 +90,7 @@
 		<xsl:value-of select="number($depth) + 1"/>
 	  </xsl:with-param>
 	</xsl:apply-templates>
-
+	
 	<xsl:apply-templates select="d:appendix|d:colophon">
 	  <xsl:with-param name="depth">
 		<xsl:value-of select="number($depth)"/>

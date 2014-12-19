@@ -48,7 +48,8 @@ EPUB_STYLE_DIR ?= $(STYLE_DIR)/epub/$(EPUB_STYLE)
 EPUB_EXTRAS    ?= echo
 
 # Parameters
-CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=docbook
+CREOLE_QUOTES ?= docbook
+CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=$(CREOLE_QUOTES) --parse-fences-as-poetry
 
 #
 # Top-Level Rules
@@ -71,7 +72,7 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.markdown
 	mfgames-creole docbook $(CREOLE2DOCBOOK_PARAMS) --id=$(notdir $*) --force --output $(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*.txt
 
 	xmllint $(TEMP_DIR)/$*.xml > /dev/null
-	jing /usr/share/xml/docbook/schema/rng/5.0/docbook.rng $(TEMP_DIR)/$*.xml
+#	jing /usr/share/xml/docbook/schema/rng/5.0/docbook.rng $(TEMP_DIR)/$*.xml
 
 #
 # Creole
@@ -194,9 +195,9 @@ $(TEX_BUILD_DIR)/%.tex: $(TEMP_DIR)/%.tex
 		< $(TEMP_DIR)/$*.tex > $(TEX_BUILD_DIR)/$*.tex
 
 $(TEMP_DIR)/%.pdf: $(TEX_BUILD_DIR)/%.tex
-	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex
-	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex > /dev/null
-	cd $(TEMP_DIR)/$(dir $*) && $(XELATEX) -output-directory=$(TEMP_DIR) -halt-on-error $(TEX_BUILD_DIR)/$*.tex > /dev/null
+	cd $(realpath $(TEMP_DIR))/$(dir $*) && $(XELATEX) -output-directory=$(realpath $(TEMP_DIR)) -halt-on-error $(realpath $(TEX_BUILD_DIR))/$*.tex
+	cd $(realpath $(TEMP_DIR))/$(dir $*) && $(XELATEX) -output-directory=$(realpath $(TEMP_DIR)) -halt-on-error $(realpath $(TEX_BUILD_DIR))/$*.tex > /dev/null
+	cd $(realpath $(TEMP_DIR))/$(dir $*) && $(XELATEX) -output-directory=$(realpath $(TEMP_DIR)) -halt-on-error $(realpath $(TEX_BUILD_DIR))/$*.tex > /dev/null
 
 $(PDF_BUILD_DIR)/%.pdf: $(TEMP_DIR)/%.pdf
 	mkdir -p $(PDF_BUILD_DIR)/$(dir $*)

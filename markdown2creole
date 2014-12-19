@@ -102,8 +102,19 @@ for my $line (@headers)
 		{
 			$data = join("; ", @$data);
 		}
-
-		$header .= "* $key: $data\n";
+		
+		if (ref($data) eq "HASH")
+		{
+			print STDERR "Can't handle HASH in YAML header.\n";
+		}
+		elsif (!defined $data)
+		{
+			print STDERR "Can't figure out data for $key\n";
+		}
+		else
+		{
+			$header .= "* $key: $data\n";
+		}
 	}
 }
 
@@ -121,8 +132,15 @@ if (exists $$yaml{"LocalWords"})
 # Swap the epigraph, if we have one.
 $buffer =~ s@(LocalWords:.*?)\n\n(>.*?)\n@$2\n\n$1\n@s;
 
-# Fix italics.
+# Fix the line breaks.
+$buffer =~ s@\n[\*-]{3,}\n@\n---\n@sg;
+
+# Fix italics and bolds.
 $buffer =~ s@\*@//@sg;
+$buffer =~ s@////@**@sg;
+
+# Fix the fences.
+$buffer =~ s@\n```(\s*\w+)\n(.*?)\n```\n@\n{{{\n$2\n}}}\n@sg;
 
 # We're finished with the input handle.
 close INPUT;
