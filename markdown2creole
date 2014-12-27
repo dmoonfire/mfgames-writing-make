@@ -139,6 +139,9 @@ $buffer =~ s@\n[\*-]{3,}\n@\n---\n@sg;
 $buffer =~ s@\*@//@sg;
 $buffer =~ s@////@**@sg;
 
+# Fix the links.
+$buffer =~ s@\[([^\[]+)\]\(([^\)]+)\)@[[$2|$1]]@sg;
+
 # Fix the fences.
 $buffer =~ s@\n```(\s*\w+)\n(.*?)\n```\n@\n{{{\n$2\n}}}\n@sg;
 
