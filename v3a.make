@@ -50,6 +50,7 @@ EPUB_EXTRAS    ?= echo
 # Parameters
 CREOLE_QUOTES ?= docbook
 CREOLE2DOCBOOK_PARAMS ?= --ignore-localwords --parse-attributions --parse-backticks --parse-languages --parse-metadata --parse-special-paragraphs --parse-summaries --enable-comments --parse-epigraphs --convert-quotes=$(CREOLE_QUOTES) --parse-fences-as-poetry
+DOCBOOKGATHER_CHAPTERS ?= auto
 
 #
 # Top-Level Rules
@@ -102,6 +103,7 @@ $(TEMP_DIR)/%.xml: $(SOURCE_DIR)/%.xml
 	# Combine all the XML into a single one. We don't process cover
 	# since we'll be manually converting that file into cover.jpg.
 	mfgames-docbook gather --copy-media --force \
+		--book-chapters=$(DOCBOOKGATHER_CHAPTERS) \
 		--exclude-media=cover.jpg \
 		$(TEMP_DIR)/$*.xml $(TEMP_DIR)/$*-gather \
 		--directory-root=$(TEMP_DIR) \

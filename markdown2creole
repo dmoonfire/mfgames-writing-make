@@ -139,6 +139,16 @@ $buffer =~ s@\n[\*-]{3,}\n@\n---\n@sg;
 $buffer =~ s@\*@//@sg;
 $buffer =~ s@////@**@sg;
 
+# Fix headers.
+while ($buffer =~ s@\n(\s{0,3})(\#{1,5})(\s+)@\nPLACEHOLDER@s)
+{
+	my $replace = $2;
+	my $leading = $1;
+	my $trailing = $3;
+	$replace =~ s/#/=/g;
+	$buffer =~ s@PLACEHOLDER@$leading=$replace$trailing@s;
+}
+
 # Fix the links.
 $buffer =~ s@\[([^\[]+)\]\(([^\)]+)\)@[[$2|$1]]@sg;
 
