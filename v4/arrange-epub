@@ -1,0 +1,204 @@
+#!/usr/bin/perl
+
+# TODO: Change chapters to bastard title.
+
+#
+# Setup
+#
+
+# Directives
+use strict;
+use warnings;
+
+# Modules
+use Archive::Zip;
+use Getopt::Long;
+
+#
+# Options
+#
+
+my $VERBOSE = 0;
+
+&GetOptions(
+	"verbose|v!" => \$VERBOSE
+	);
+
+#
+# Processing
+#
+
+# Open the EPUB as a ZIP archive.
+my $zip = Archive::Zip->new();
+
+die "Cannot read zip archive $ARGV[0]"
+	unless ($zip->read($ARGV[0]) == Archive::Zip::AZ_OK);
+
+# Go through all the chapter files to see if we have any of the key
+# files.
+my %chapter_ids = ();
+my $changed = 0;
+
+# Handle the special cases.
+my $contents = $zip->contents("nav.xhtml");
+$changed += update_navigation(\$contents);
+$zip->contents("nav.xhtml", $contents);
+
+# Go through the rest of the entries.
+print STDERR "Entries:\n" if $VERBOSE;
+
+foreach my $memberName ($zip->memberNames())
+{
+	# Normally, we only process XHTML files.
+	next unless $memberName =~ m@\.xhtml$@;
+	next if $memberName eq "nav.xhtml";
+
+	# Grab the entire contents and look for an ID.
+	$contents = $zip->contents($memberName);
+	my $id = $contents =~ m@<div id=\"([^\"]+)\" class=\"section@s
+		? $1
+		: undef;
+
+	next unless defined $id;
+
+	# Save the chapter and ID for when we rearrange the `content.opf` file.
+	$chapter_ids{$id} = $memberName;
+	$chapter_ids{$id} =~ s@\.xhtml$@@;
+
+	# We have special processing for some of these categories.
+	if ($id eq "legal")
+	{
+		update_legal(\$contents);
+		$zip->contents($memberName, $contents);
+		$changed = 1;
+	}
+	elsif ($id eq "dedication")
+	{
+		update_dedication(\$contents);
+		$zip->contents($memberName, $contents);
+		$changed = 1;
+	}
+
+	# Report what we are processing.
+	print STDERR "Scanned $memberName ($id)\n" if $VERBOSE;
+}
+
+# Parse the `content.opf` to see if we have a legal.
+$contents = $zip->contents("content.opf");
+$changed += update_opf(\$contents);
+$zip->contents("content.opf", $contents);
+
+# If we changed, write it out.
+$zip->overwrite() if $changed;
+
+#
+# Specific File Updates
+#
+
+# Remove the legal and dedication entries.
+sub update_navigation
+{
+	my $ref = shift @_;
+	my $value = 0;
+
+	foreach my $name (qw(Legal Dedication))
+	{
+		$value += $$ref =~ s@
+      <li [^\>]+>\s*
+        <a [^>]+>\s*
+          <span>$name</span>\s*
+        </a>\s*
+      </li>\s*
+    @@sgx;
+	}
+
+	return $value;
+}
+
+# Reorder elements
+sub update_opf
+{
+	# Pull out the values so we can process them.
+	my $ref = shift @_;
+	my $value = 0;
+
+	# Pull out the spine elements.
+	if ($$ref =~ s@(<spine\s+toc="ncx">\s*)
+                   (.*?)
+                   (\s*</spine>)@$1-PLACEHOLDER-$3@sx)
+	{
+		# We have spine elements, so reorder them.
+		my @items = split(/\n/, $2);
+
+		# Pull out the lines for the legal.
+		my @frontmatter = ();
+
+		if (exists $chapter_ids{"legal"})
+		{
+			my $chapter = $chapter_ids{"legal"};
+			my $index = 0;
+			++$index until $items[$index] =~ m@idref="$chapter"@
+				|| $index > $#items;
+
+			if ($index < $#items)
+			{
+				push @frontmatter, splice(@items, $index, 1);
+			}
+		}
+
+		if (exists $chapter_ids{"dedication"})
+		{
+			my $chapter = $chapter_ids{"dedication"};
+			my $index = 0;
+			++$index until $items[$index] =~ m@idref="$chapter"@
+				|| $index > $#items;
+
+			if ($index < $#items)
+			{
+				push @frontmatter, splice(@items, $index, 1);
+			}
+		}
+
+		# Normalize the frontmatter lines.
+		for (my $fm_index = 0; $fm_index < @frontmatter; $fm_index++)
+		{
+			$frontmatter[$fm_index] =~ s@/>@linear="yes" />@;
+		}
+
+		# Insert the front matter in front of the nav.
+		my $nav_index = 0;
+		++$nav_index until $items[$nav_index] =~ m@idref="nav"@
+			|| $nav_index > $#items;
+
+		splice(@items, $nav_index, 0, @frontmatter);
+
+		# We are changing if we had frontmatter.
+		$value++ if @frontmatter;
+
+		# Put them back into the file.
+		my $items = join("\n", @items);
+		$$ref =~ s@-PLACEHOLDER-@$items@sg;
+	}
+
+	# Return if we made any changes.
+	return $value;
+}
+
+# Remove the header from the legal chapter. All paragraphs in the
+# legal section are blocked.
+sub update_legal
+{
+	my $ref = shift @_;
+	$$ref =~ s@<h1>.*?</h1>@@sg;
+	$$ref =~ s@<p>@<p class="block">@sg;
+}
+
+# Remove the header from the dedication chapter. Also, the dedication
+# is centered.
+sub update_dedication
+{
+	my $ref = shift @_;
+	$$ref =~ s@<h1>.*?</h1>@@sg;
+	$$ref =~ s@<p>@<p class="center">@sg;
+}
+

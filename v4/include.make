@@ -20,6 +20,7 @@ KINDLEGEN				?= kindlegen
 PANDOC					?= pandoc
 PANDOC_ARGS				?= --smart
 PANDOC_EPUB				?= $(PANDOC_ARGS) -t epub
+PANDOC_EPUB_CSS         ?= $(WRITING_DIR)/templates/epub.css
 PANDOC_EPUB_STANDALONE	?= $(PANDOC_EPUB) -s --toc --epub-chapter-level=2
 PANDOC_PDF				?= $(PANDOC_ARGS)
 PANDOC_HTML				?= $(PANDOC_ARGS) -t html5 --section-divs
@@ -41,7 +42,18 @@ $(BUILD_DIR)/%.html: $(BUILD_DIR)/%-html.markdown
 #
 # EPUB
 #
+# Unfortunately, `pandoc` doesn't allow us to use -B to insert HTML
+# files before the table of contents. So, we have to call a Perl
+# script to clean up the resulting document to fit closer to the book:
+#
+# 1. Move the legal page after the title but before the table of contents
+# 2. Remove the title from the legal page
+# 3. Remove the TOC entry for the legal page
+# 4. Move the dedication before the table of contents
+# 5. Remove the title for the dedication
+# 6. Rename table of contents to be "Table of Contents"
 
+# Image
 $(BUILD_DIR)/%-epub.jpg: %.jpg
 	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 	cp $*.jpg $(BUILD_DIR)/$*-epub.jpg
@@ -53,11 +65,19 @@ $(BUILD_DIR)/%-epub.png: $(BUILD_DIR)/%-epub.markdown
 $(BUILD_DIR)/%-epub.jpg: $(BUILD_DIR)/%-epub.png
 	convert $(BUILD_DIR)/$*-epub.png $(BUILD_DIR)/$*-epub.jpg
 
+# Content
 $(BUILD_DIR)/%-epub.markdown: %.markdown
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 	$(MARKDOWN_INCLUDE) $*.markdown --output=$(BUILD_DIR)/$*-epub.markdown
 
-$(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg
-	$(PANDOC) $(PANDOC_EPUB_STANDALONE) $(BUILD_DIR)/$*-epub.markdown -o $(BUILD_DIR)/$*.epub --epub-cover-image=$(BUILD_DIR)/$*-epub.jpg
+$(BUILD_DIR)/epub.css: $(PANDOC_EPUB_CSS)
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
+	cp $(PANDOC_EPUB_CSS) $(BUILD_DIR)/epub.css
+
+$(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg $(BUILD_DIR)/epub.css
+	$(PANDOC) $(PANDOC_EPUB_STANDALONE) -o $(BUILD_DIR)/$*.epub --epub-cover-image=$(BUILD_DIR)/$*-epub.jpg --epub-stylesheet=$(BUILD_DIR)/epub.css $(BUILD_DIR)/$*-epub.markdown --data-dir=$(BUILD_DIR)
+	$(WRITING_DIR)/arrange-epub $(BUILD_DIR)/$*.epub --verbose
+	rm $(BUILD_DIR)/epub.css
 
 #
 # MOBI
