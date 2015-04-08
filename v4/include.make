@@ -14,6 +14,7 @@
 #
 
 MARKDOWN_INCLUDE		?= markdown-include
+MARKDOWN_EXTRACT		?= markdown-extract
 KINDLEGEN				?= kindlegen
 
 PANDOC					?= pandoc
@@ -30,7 +31,8 @@ BUILD_DIR				?= build
 # HTML
 #
 
-$(BUILD_DIR)/%-html.markdown: make-build %.markdown
+$(BUILD_DIR)/%-html.markdown: %.markdown
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 	$(MARKDOWN_INCLUDE) $*.markdown --output=$(BUILD_DIR)/$*-html.markdown
 
 $(BUILD_DIR)/%.html: $(BUILD_DIR)/%-html.markdown
@@ -41,15 +43,17 @@ $(BUILD_DIR)/%.html: $(BUILD_DIR)/%-html.markdown
 #
 
 $(BUILD_DIR)/%-epub.jpg: %.jpg
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 	cp $*.jpg $(BUILD_DIR)/$*-epub.jpg
 
 $(BUILD_DIR)/%-epub.png: $(BUILD_DIR)/%-epub.markdown
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 	$(WRITING_DIR)/../make-cover "$(shell grep title: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d:)" "$(shell grep author: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d:)" $(BUILD_DIR)/$*-epub.png
 
 $(BUILD_DIR)/%-epub.jpg: $(BUILD_DIR)/%-epub.png
 	convert $(BUILD_DIR)/$*-epub.png $(BUILD_DIR)/$*-epub.jpg
 
-$(BUILD_DIR)/%-epub.markdown: make-build %.markdown
+$(BUILD_DIR)/%-epub.markdown: %.markdown
 	$(MARKDOWN_INCLUDE) $*.markdown --output=$(BUILD_DIR)/$*-epub.markdown
 
 $(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg
@@ -65,9 +69,6 @@ $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 #
 # Common
 #
-
-make-build:
-	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
 
 clean:
 	rm -fr $(BUILD_DIR)
