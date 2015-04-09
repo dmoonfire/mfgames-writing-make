@@ -69,15 +69,23 @@ foreach my $memberName ($zip->memberNames())
 	if ($id eq "legal")
 	{
 		update_legal(\$contents);
-		$zip->contents($memberName, $contents);
 		$changed = 1;
 	}
 	elsif ($id eq "dedication")
 	{
 		update_dedication(\$contents);
-		$zip->contents($memberName, $contents);
 		$changed = 1;
 	}
+
+	# Update breaks.
+	$changed += update_breaks(\$contents);
+
+	# Update the file.
+	$zip->contents($memberName, $contents);
+
+	# Remove the chapters and appendixes section.
+	$zip->removeMember($memberName)
+		if $id eq "chapters" or $id eq "appendixes";
 
 	# Report what we are processing.
 	print STDERR "Scanned $memberName ($id)\n" if $VERBOSE;
@@ -87,6 +95,11 @@ foreach my $memberName ($zip->memberNames())
 $contents = $zip->contents("content.opf");
 $changed += update_opf(\$contents);
 $zip->contents("content.opf", $contents);
+
+# Parse the `toc.ncx` and remove items.
+$contents = $zip->contents("toc.ncx");
+$changed += update_ncx(\$contents);
+$zip->contents("toc.ncx", $contents);
 
 # If we changed, write it out.
 $zip->overwrite() if $changed;
@@ -98,12 +111,13 @@ $zip->overwrite() if $changed;
 # Remove the legal and dedication entries.
 sub update_navigation
 {
+	# Grab the values.
 	my $ref = shift @_;
-	my $value = 0;
 
+	# Remove the links for the frontmatter.
 	foreach my $name (qw(Legal Dedication))
 	{
-		$value += $$ref =~ s@
+		$$ref =~ s@
       <li [^\>]+>\s*
         <a [^>]+>\s*
           <span>$name</span>\s*
@@ -112,7 +126,78 @@ sub update_navigation
     @@sgx;
 	}
 
-	return $value;
+	# Rename the title.
+	$$ref =~ s@(<h1 id="toc-title")>.*?<(/h1>)@$1>Table of Contents<$2@sg;
+
+	# Remove the chapters section.
+    $$ref =~ s@
+        <li\s+id="[^"]+">\s*
+          <a\s+href="\w+.xhtml">\s*
+            <span>Chapters</span>\s*
+          </a>\s*
+          <ol\s+class="toc">\s*
+          (.*?)\s*
+          </ol>\s*
+        </li>@$1@sgx;
+
+	# Change the appendix section.
+    $$ref =~ s@
+        <li\s+id="[^"]+">\s*
+          <a\s+href="\w+.xhtml">\s*
+            <span>Appendixes</span>\s*
+          </a>\s*
+          <ol\s+class="toc">\s*
+          (.*?)\s*
+          </ol>\s*
+        </li>(.*)$@</ol><ul class="toc">PLACEHOLDERSECONDHOLDER@sgx;
+	my $a_contents = $1;
+	my $b_contents = $2;
+	$a_contents =~ s@<ol @<ul @sg;
+	$a_contents =~ s@</ol>@</ul>@sg;
+	$b_contents =~ s@</ol>@</ul>@sg;
+	$$ref =~ s@PLACEHOLDER@$a_contents@sg;
+	$$ref =~ s@SECONDHOLDER@$b_contents@sg;
+
+	# Return if we've changed.
+	return 1;
+}
+
+# Remove the legal and dedication entries.
+sub update_ncx
+{
+	# Grab the values.
+	my $ref = shift @_;
+	my $changed = 0;
+
+	# Remove the links for the frontmatter.
+	foreach my $name (qw(Chapters Appendixes))
+	{
+		$$ref =~ s@
+    <navPoint\s+id="[^"]+"\s+playOrder="\d+">\s*
+      <navLabel>\s*
+        <text>$name</text>\s*
+      </navLabel>\s*
+      <content\s+src="ch\d+.xhtml"\s+/>\s*
+      (<navPoint.*?</navPoint>)\s*
+    </navPoint>@$1@sgx;
+	}
+
+	# Go through the lines and rebuild the play order.
+	my @lines = split(/\n/, $$ref);
+	my $playOrder = 1;
+
+	for (my $index = 0; $index < @lines; $index++)
+	{
+		if ($lines[$index] =~ s@playOrder="\d+"@playOrder="$playOrder"@)
+		{
+			$playOrder++;
+		}
+	}
+
+	$$ref = join("\n", @lines);
+
+	# Return if we've changed.
+	return $changed;
 }
 
 # Reorder elements
@@ -133,31 +218,12 @@ sub update_opf
 		# Pull out the lines for the legal.
 		my @frontmatter = ();
 
-		if (exists $chapter_ids{"legal"})
-		{
-			my $chapter = $chapter_ids{"legal"};
-			my $index = 0;
-			++$index until $items[$index] =~ m@idref="$chapter"@
-				|| $index > $#items;
+		push @frontmatter, extract_item(\@items, "idref", "legal");
+		push @frontmatter, extract_item(\@items, "idref", "dedication");
 
-			if ($index < $#items)
-			{
-				push @frontmatter, splice(@items, $index, 1);
-			}
-		}
-
-		if (exists $chapter_ids{"dedication"})
-		{
-			my $chapter = $chapter_ids{"dedication"};
-			my $index = 0;
-			++$index until $items[$index] =~ m@idref="$chapter"@
-				|| $index > $#items;
-
-			if ($index < $#items)
-			{
-				push @frontmatter, splice(@items, $index, 1);
-			}
-		}
+		# Get rid of the chapters and appendixes.
+		extract_item(\@items, "idref", "chapters");
+		extract_item(\@items, "idref", "appendixes");
 
 		# Normalize the frontmatter lines.
 		for (my $fm_index = 0; $fm_index < @frontmatter; $fm_index++)
@@ -174,6 +240,23 @@ sub update_opf
 
 		# We are changing if we had frontmatter.
 		$value++ if @frontmatter;
+
+		# Put them back into the file.
+		my $items = join("\n", @items);
+		$$ref =~ s@-PLACEHOLDER-@$items@sg;
+	}
+
+	# Pull out the spine elements.
+	if ($$ref =~ s@(<manifest>\s*)
+                   (.*?)
+                   (\s*</manifest>)@$1-PLACEHOLDER-$3@sx)
+	{
+		# We have spine elements, so reorder them.
+		my @items = split(/\n/, $2);
+
+		# Get rid of the chapters and appendixes.
+		extract_item(\@items, "id", "chapters");
+		extract_item(\@items, "id", "appendixes");
 
 		# Put them back into the file.
 		my $items = join("\n", @items);
@@ -202,3 +285,46 @@ sub update_dedication
 	$$ref =~ s@<p>@<p class="center">@sg;
 }
 
+# Remove the <hr/> elements and replace them with a more obvious break.
+sub update_breaks
+{
+	my $ref = shift @_;
+	my $changed = $$ref =~ s@<hr\s*/>@<p class="break"># # #</p>@sg;
+	return $changed;
+}
+
+#
+# Item Removal
+#
+
+sub get_array_index
+{
+	my ($items, $attr, $chapter) = @_;
+	my @items = @$items;
+	my $index = 0;
+	++$index until $items[$index] =~ m@$attr="$chapter"@
+		|| $index > $#items;
+	
+	$index = -1 if $index == $#items;
+
+	return $index;
+}
+
+sub extract_item
+{
+	my ($items, $attr, $id) = @_;
+	my @list = ();
+
+	if (exists $chapter_ids{$id})
+	{
+		my $chapter = $chapter_ids{$id};
+		my $index = get_array_index($items, $attr, $chapter);
+		
+		if ($index >= 0)
+		{
+			push @list, splice(@$items, $index, 1);
+		}
+	}
+
+	return @list;
+}

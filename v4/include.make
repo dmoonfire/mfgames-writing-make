@@ -16,6 +16,7 @@
 MARKDOWN_INCLUDE		?= markdown-include
 MARKDOWN_EXTRACT		?= markdown-extract
 KINDLEGEN				?= kindlegen
+EPUBCHECK				?= epubcheck
 
 PANDOC					?= pandoc
 PANDOC_ARGS				?= --smart
@@ -78,6 +79,7 @@ $(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg $(BUIL
 	$(PANDOC) $(PANDOC_EPUB_STANDALONE) -o $(BUILD_DIR)/$*.epub --epub-cover-image=$(BUILD_DIR)/$*-epub.jpg --epub-stylesheet=$(BUILD_DIR)/epub.css $(BUILD_DIR)/$*-epub.markdown --data-dir=$(BUILD_DIR)
 	$(WRITING_DIR)/arrange-epub $(BUILD_DIR)/$*.epub --verbose
 	rm $(BUILD_DIR)/epub.css
+	$(EPUBCHECK) $(BUILD_DIR)/$*.epub
 
 #
 # MOBI
