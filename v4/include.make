@@ -20,14 +20,36 @@ EPUBCHECK				?= epubcheck
 
 PANDOC					?= pandoc
 PANDOC_ARGS				?= --smart
-PANDOC_EPUB				?= $(PANDOC_ARGS) -t epub
 PANDOC_EPUB_CSS         ?= $(WRITING_DIR)/templates/epub.css
+PANDOC_EPUB				?= $(PANDOC_ARGS) -t epub
 PANDOC_EPUB_STANDALONE	?= $(PANDOC_EPUB) -s --toc --epub-chapter-level=2
 PANDOC_PDF				?= $(PANDOC_ARGS)
 PANDOC_HTML				?= $(PANDOC_ARGS) -t html5 --section-divs
 PANDOC_HTML_STANDALONE	?= $(PANDOC_HTML) -s --toc
 
 BUILD_DIR				?= build
+
+# Default to building all the Markdown files in the Makefile directory.
+INDEXES       ?= $(wildcard *.markdown)
+BUILD_INDEXES ?= $(addprefix $(BUILD_DIR)/,$(INDEXES))
+BUILD_EPUB    ?= $(BUILD_INDEXES:markdown=epub)
+BUILD_PDF     ?= $(BUILD_INDEXES:markdown=pdf)
+BUILD_MOBI    ?= $(BUILD_INDEXES:markdown=mobi)
+BUILD_HTML    ?= $(BUILD_INDEXES:markdown=html)
+
+
+#
+# Common
+#
+
+# We call Make directly on these becaues the dependencies doesn't work
+# as well.
+v4:
+	$(MAKE) $(BUILD_HTML) $(BUILD_EPUB) $(BUILD_MOBI)
+
+clean:
+	rm -fr $(BUILD_DIR)
+	rm -f *~
 
 #
 # HTML
@@ -61,7 +83,7 @@ $(BUILD_DIR)/%-epub.jpg: %.jpg
 
 $(BUILD_DIR)/%-epub.png: $(BUILD_DIR)/%-epub.markdown
 	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
-	$(WRITING_DIR)/../make-cover "$(shell grep title: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d:)" "$(shell grep author: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d:)" $(BUILD_DIR)/$*-epub.png
+	$(WRITING_DIR)/../make-cover "$(shell grep title: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d: | cut -c 2-)" "$(shell grep author: $(BUILD_DIR)/$*-epub.markdown | head -1 | cut -f 2- -d: | cut -c 2-)" $(BUILD_DIR)/$*-epub.png
 
 $(BUILD_DIR)/%-epub.jpg: $(BUILD_DIR)/%-epub.png
 	convert $(BUILD_DIR)/$*-epub.png $(BUILD_DIR)/$*-epub.jpg
@@ -77,7 +99,7 @@ $(BUILD_DIR)/epub.css: $(PANDOC_EPUB_CSS)
 
 $(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg $(BUILD_DIR)/epub.css
 	$(PANDOC) $(PANDOC_EPUB_STANDALONE) -o $(BUILD_DIR)/$*.epub --epub-cover-image=$(BUILD_DIR)/$*-epub.jpg --epub-stylesheet=$(BUILD_DIR)/epub.css $(BUILD_DIR)/$*-epub.markdown --data-dir=$(BUILD_DIR)
-	$(WRITING_DIR)/arrange-epub $(BUILD_DIR)/$*.epub --verbose
+	$(WRITING_DIR)/arrange-epub $(BUILD_DIR)/$*.epub
 	rm $(BUILD_DIR)/epub.css
 	$(EPUBCHECK) $(BUILD_DIR)/$*.epub
 
@@ -87,11 +109,3 @@ $(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg $(BUIL
 
 $(BUILD_DIR)/%.mobi: $(BUILD_DIR)/%.epub
 	$(KINDLEGEN) $(BUILD_DIR)/$*.epub
-
-#
-# Common
-#
-
-clean:
-	rm -fr $(BUILD_DIR)
-	rm -f *~
