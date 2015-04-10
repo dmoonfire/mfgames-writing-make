@@ -17,15 +17,18 @@ MARKDOWN_INCLUDE		?= markdown-include
 MARKDOWN_EXTRACT		?= markdown-extract
 KINDLEGEN				?= kindlegen
 EPUBCHECK				?= epubcheck
+XELATEX					?= buf_size=2500000 xelatex
 
 PANDOC					?= pandoc
-PANDOC_ARGS				?= --smart
+PANDOC_ARGS				?= --smart --normalize
 PANDOC_EPUB_CSS         ?= $(WRITING_DIR)/templates/epub.css
 PANDOC_EPUB				?= $(PANDOC_ARGS) -t epub
 PANDOC_EPUB_STANDALONE	?= $(PANDOC_EPUB) -s --toc --epub-chapter-level=2
 PANDOC_PDF				?= $(PANDOC_ARGS)
 PANDOC_HTML				?= $(PANDOC_ARGS) -t html5 --section-divs
 PANDOC_HTML_STANDALONE	?= $(PANDOC_HTML) -s --toc
+PANDOC_TEX				?= $(PANDOC_ARGS) -t latex --no-tex-ligatures --chapters
+PANDOC_TEX_STANDALONE	?= $(PANDOC_TEX) -s
 
 BUILD_DIR				?= build
 
@@ -102,6 +105,57 @@ $(BUILD_DIR)/%.epub: $(BUILD_DIR)/%-epub.markdown $(BUILD_DIR)/%-epub.jpg $(BUIL
 	$(WRITING_DIR)/arrange-epub $(BUILD_DIR)/$*.epub
 	rm $(BUILD_DIR)/epub.css
 	$(EPUBCHECK) $(BUILD_DIR)/$*.epub
+
+#
+# LaTeX
+#
+
+$(BUILD_DIR)/%-tex:
+	if [ ! -d $(BUILD_DIR)/$*-tex ];then mkdir -p $(BUILD_DIR)/$*-tex;fi
+	cp $(WRITING_DIR)/latex/*.tex $(BUILD_DIR)/$*-tex
+
+$(BUILD_DIR)/%-tex.markdown: %.markdown
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
+	$(MARKDOWN_INCLUDE) $*.markdown --output=$(BUILD_DIR)/$*-tex.markdown --strip
+
+$(BUILD_DIR)/%-tex-legal.markdown: $(BUILD_DIR)/%-tex.markdown
+	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-legal.markdown --id=legal
+
+$(BUILD_DIR)/%-tex/before-21-legal.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-legal.markdown
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-legal.markdown -o $(BUILD_DIR)/$*-tex/before-21-legal.tex
+
+$(BUILD_DIR)/%-tex-dedication.markdown: $(BUILD_DIR)/%-tex.markdown
+	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-dedication.markdown --id=dedication
+
+$(BUILD_DIR)/%-tex/before-31-dedication.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-dedication.markdown
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-dedication.markdown -o $(BUILD_DIR)/$*-tex/before-31-dedication.tex
+
+$(BUILD_DIR)/%-tex-backmatter.markdown: $(BUILD_DIR)/%-tex.markdown
+	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-backmatter.markdown --class=backmatter
+
+$(BUILD_DIR)/%-tex/after-31-backmatter.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-backmatter.markdown
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-backmatter.markdown -o $(BUILD_DIR)/$*-tex/after-31-backmatter.tex
+
+$(BUILD_DIR)/%-tex-mainmatter.markdown: $(BUILD_DIR)/%-tex.markdown
+	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-mainmatter.markdown --class=backmatter --id=legal --id=dedication --not --yaml
+
+$(BUILD_DIR)/%.tex: $(BUILD_DIR)/%-tex-mainmatter.markdown $(BUILD_DIR)/%-tex/before-21-legal.tex $(BUILD_DIR)/%-tex/before-31-dedication.tex $(BUILD_DIR)/%-tex/after-31-backmatter.tex 
+	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
+	$(PANDOC) $(PANDOC_TEX_STANDALONE) $(BUILD_DIR)/$*-tex-mainmatter.markdown --output=$(BUILD_DIR)/$*.tex $(addprefix -B ,$(shell ls $(BUILD_DIR)/$*-tex/before-*.tex)) $(addprefix -A ,$(shell ls $(BUILD_DIR)/$*-tex/after-*.tex))
+	rm -rf $(BUILD_DIR)/$*-tex
+
+#
+# PDF
+#
+
+$(BUILD_DIR)/%.pdf: $(BUILD_DIR)/%.tex
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
+	rm -f $(BUILD_DIR)/$*.log
+	rm -f $(BUILD_DIR)/$*.aux
+	rm -f $(BUILD_DIR)/$*.out
+	rm -f $(BUILD_DIR)/$*.toc
 
 #
 # MOBI
