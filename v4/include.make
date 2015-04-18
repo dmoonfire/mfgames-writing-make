@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-# MfGames Writing Make v4.0.0
+# MfGames Writing Make v4
 #
 # This is a Makefile-based build system for working with novels and
 # stories.
@@ -29,8 +29,10 @@ PANDOC_HTML				?= $(PANDOC_ARGS) -t html5 --section-divs
 PANDOC_HTML_STANDALONE	?= $(PANDOC_HTML) -s --toc
 PANDOC_TEX				?= $(PANDOC_ARGS) -t latex --no-tex-ligatures --chapters
 PANDOC_TEX_STANDALONE	?= $(PANDOC_TEX) -s
+PANDOC_TEX_TEMPLATE		?= default.latex
 
 BUILD_DIR				?= build
+ETC_DIR					?= etc
 
 # Default to building all the Markdown files in the Makefile directory.
 INDEXES       ?= $(wildcard *.markdown)
@@ -122,26 +124,32 @@ $(BUILD_DIR)/%-tex-legal.markdown: $(BUILD_DIR)/%-tex.markdown
 	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-legal.markdown --id=legal
 
 $(BUILD_DIR)/%-tex/before-21-legal.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-legal.markdown
-	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-legal.markdown -o $(BUILD_DIR)/$*-tex/before-21-legal.tex
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-legal.markdown -o $(BUILD_DIR)/$*-tex/legal.tex
+	grep -v '\chapter' $(BUILD_DIR)/$*-tex/legal.tex > $(BUILD_DIR)/$*-tex/before-21-legal.tex
+	rm $(BUILD_DIR)/$*-tex/legal.tex
 
 $(BUILD_DIR)/%-tex-dedication.markdown: $(BUILD_DIR)/%-tex.markdown
 	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-dedication.markdown --id=dedication
 
 $(BUILD_DIR)/%-tex/before-31-dedication.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-dedication.markdown
-	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-dedication.markdown -o $(BUILD_DIR)/$*-tex/before-31-dedication.tex
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-dedication.markdown -o $(BUILD_DIR)/$*-tex/dedication.tex
+	grep -v '\chapter' $(BUILD_DIR)/$*-tex/dedication.tex > $(BUILD_DIR)/$*-tex/before-31-dedication.tex
+	rm $(BUILD_DIR)/$*-tex/dedication.tex
 
 $(BUILD_DIR)/%-tex-backmatter.markdown: $(BUILD_DIR)/%-tex.markdown
 	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-backmatter.markdown --class=backmatter
 
 $(BUILD_DIR)/%-tex/after-31-backmatter.tex: $(BUILD_DIR)/%-tex $(BUILD_DIR)/%-tex-backmatter.markdown
-	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-backmatter.markdown -o $(BUILD_DIR)/$*-tex/after-31-backmatter.tex
+	$(PANDOC) $(PANDOC_TEX) $(BUILD_DIR)/$*-tex-backmatter.markdown -o $(BUILD_DIR)/$*-tex/backmatter.tex
+	cat $(BUILD_DIR)/$*-tex/backmatter.tex | sed 's@\\chapter@\\chapter\*@g' > $(BUILD_DIR)/$*-tex/after-31-backmatter.tex
+	rm $(BUILD_DIR)/$*-tex/backmatter.tex
 
 $(BUILD_DIR)/%-tex-mainmatter.markdown: $(BUILD_DIR)/%-tex.markdown
 	$(MARKDOWN_EXTRACT) $(BUILD_DIR)/$*-tex.markdown -o $(BUILD_DIR)/$*-tex-mainmatter.markdown --class=backmatter --id=legal --id=dedication --not --yaml
 
 $(BUILD_DIR)/%.tex: $(BUILD_DIR)/%-tex-mainmatter.markdown $(BUILD_DIR)/%-tex/before-21-legal.tex $(BUILD_DIR)/%-tex/before-31-dedication.tex $(BUILD_DIR)/%-tex/after-31-backmatter.tex 
 	if [ ! -d $(BUILD_DIR) ];then mkdir -p $(BUILD_DIR);fi
-	$(PANDOC) $(PANDOC_TEX_STANDALONE) $(BUILD_DIR)/$*-tex-mainmatter.markdown --output=$(BUILD_DIR)/$*.tex $(addprefix -B ,$(shell ls $(BUILD_DIR)/$*-tex/before-*.tex)) $(addprefix -A ,$(shell ls $(BUILD_DIR)/$*-tex/after-*.tex))
+	$(PANDOC) $(PANDOC_TEX_STANDALONE) $(BUILD_DIR)/$*-tex-mainmatter.markdown --output=$(BUILD_DIR)/$*.tex $(addprefix -B ,$(shell ls $(BUILD_DIR)/$*-tex/before-*.tex)) $(addprefix -A ,$(shell ls $(BUILD_DIR)/$*-tex/after-*.tex)) $(addprefix -H ,$(shell ls $(BUILD_DIR)/$*-tex/header-*.tex)) $(addprefix --data-dir=,$(shell ls -d $(ETC_DIR)/pandoc)) $(addprefix --template=,$(shell ls $(ETC_DIR)/pandoc/$(PANDOC_TEX_TEMPLATE))) --variable=documentclass:memoir --variable=classoption:a5paper,12pt,twoside,openright,final,onecolumn
 	rm -rf $(BUILD_DIR)/$*-tex
 
 #
@@ -149,13 +157,12 @@ $(BUILD_DIR)/%.tex: $(BUILD_DIR)/%-tex-mainmatter.markdown $(BUILD_DIR)/%-tex/be
 #
 
 $(BUILD_DIR)/%.pdf: $(BUILD_DIR)/%.tex
-	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
-	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
-	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*.tex > /dev/null
-	rm -f $(BUILD_DIR)/$*.log
-	rm -f $(BUILD_DIR)/$*.aux
-	rm -f $(BUILD_DIR)/$*.out
-	rm -f $(BUILD_DIR)/$*.toc
+	cp $(BUILD_DIR)/$*.tex $(BUILD_DIR)/$*-tmp.tex 
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*-tmp.tex > /dev/null
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*-tmp.tex > /dev/null
+	cd $(BUILD_DIR) && $(XELATEX) -halt-on-error $*-tmp.tex > /dev/null
+	mv $(BUILD_DIR)/$*-tmp.pdf $(BUILD_DIR)/$*.pdf
+	rm -f $(BUILD_DIR)/$*-tmp.log
 
 #
 # MOBI
